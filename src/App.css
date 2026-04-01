@@ -1,0 +1,86 @@
+/* Убираем отступы и делаем на весь экран */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body,
+html,
+#root {
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* Чтобы не было скролла */
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.app-container {
+  position: relative;
+  width: 100vw;
+  height: 100vh;
+}
+
+/* Наш видео-фон на весь экран */
+.background-video {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover; /* Видео заполняет весь экран без искажений пропорций */
+  z-index: -1;
+}
+
+/* Поверхность над видео */
+.content-overlay {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Легкое затемнение фона, чтобы белая карта лучше читалась */
+  background: rgba(0, 0, 0, 0.3);
+}
+
+.title {
+  color: white;
+  margin-top: 40px;
+  font-size: 2.5rem;
+  text-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+/* Контейнер для карты */
+.map-container {
+  width: 90%;
+  max-width: 900px;
+  margin-top: 20px;
+  /* Фильтр тени для самой карты, чтобы она казалась объемной */
+  filter: drop-shadow(0 10px 15px rgba(0, 0, 0, 0.5));
+}
+
+/* Подсказка при наведении (пока простая) */
+.tooltip {
+  position: absolute;
+  top: 100px;
+  color: white;
+  font-size: 1.5rem;
+  font-weight: bold;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.8);
+}
+
+/* Стили для каждой области */
+.map-region {
+  fill: rgba(255, 255, 255, 0.15); /* Полупрозрачная заливка */
+  stroke: rgba(255, 255, 255, 0.7); /* Белые границы */
+  stroke-width: 1px;
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+/* Эффект при наведении на область */
+.map-region:hover {
+  fill: rgba(255, 255, 255, 0.5); /* Становится ярче */
+  stroke-width: 2px;
+}
