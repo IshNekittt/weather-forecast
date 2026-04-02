@@ -1,6 +1,7 @@
 import React from "react";
 import { Toaster } from "react-hot-toast";
 import Map from "./components/Map/Map";
+import FullModal from "./components/FullModal/FullModal";
 import styles from "./App.module.css";
 
 function App() {
@@ -12,6 +13,7 @@ function App() {
         <Map />
         <Toaster position="bottom-center" />
       </div>
+      <FullModal />
     </div>
   );
 }

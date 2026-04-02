@@ -1,0 +1,335 @@
+.modalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: #000;
+  color: white;
+  overflow-y: auto;
+  overflow-x: hidden;
+  /* Плавное появление */
+  animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.bgVideo {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+  opacity: 0.8;
+}
+
+.closeBtn {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  backdrop-filter: blur(10px);
+  border: none;
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 101;
+  transition: background 0.2s;
+}
+
+.closeBtn:hover {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+.content {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 40px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+@media (max-width: 767px) {
+  .content {
+    max-width: 460px;
+  }
+}
+
+/* ЗАГОЛОВОК */
+.header {
+  text-align: center;
+  margin-bottom: 20px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}
+.regionName {
+  font-size: 2rem;
+  font-weight: 400;
+  margin-bottom: 5px;
+}
+.currentTemp {
+  font-size: 5rem;
+  font-weight: 200;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+.condition {
+  font-size: 1.2rem;
+  font-weight: 500;
+}
+.highLow {
+  font-size: 1.1rem;
+  opacity: 0.9;
+  margin-top: 5px;
+}
+
+/* СТЕКЛЯННАЯ ПАНЕЛЬ (БАЗА) */
+.glassPanel {
+  background: rgba(40, 40, 40, 0.4);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
+  border-radius: 20px;
+  padding: 15px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.panelTitle {
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  opacity: 0.7;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 8px;
+}
+
+/* ПО ЧАСАМ (ГОРИЗОНТАЛЬНЫЙ СКРОЛЛ) */
+.hourlyScroll {
+  display: flex;
+  gap: 25px;
+  overflow-x: auto;
+  padding-bottom: 10px;
+  /* Прячем скроллбар, но оставляем скролл */
+  scrollbar-width: none;
+}
+.hourlyScroll::-webkit-scrollbar {
+  display: none;
+}
+
+.hourBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  min-width: 45px;
+}
+.hourTime {
+  font-size: 0.9rem;
+  font-weight: 500;
+}
+.hourTemp {
+  font-size: 1.1rem;
+  font-weight: bold;
+}
+
+/* ПРОГНОЗ НА 10 ДНЕЙ */
+.dailyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+.dailyRow:last-child {
+  border-bottom: none;
+}
+.dayName {
+  flex: 1;
+  font-size: 1.1rem;
+  font-weight: 500;
+}
+.dayIcon {
+  flex: 0.5;
+  display: flex;
+  justify-content: center;
+}
+.dayTemps {
+  flex: 1;
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+  font-weight: 500;
+}
+.tempMin {
+  opacity: 0.6;
+}
+
+/* ФИКС СЕТКИ ВИДЖЕТОВ */
+.widgetsGrid {
+  display: grid;
+  gap: 15px;
+  grid-template-columns: 1fr 1fr;
+}
+
+/* На экранах от 768px (планшеты и ПК) работает гибкая сетка */
+@media (min-width: 768px) {
+  .widgetsGrid {
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+}
+
+.squareWidget {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  min-height: 170px;
+  position: relative; /* Важно для абсолютных шкал */
+}
+
+.squareWidget.pressureWidget {
+  justify-content: flex-end;
+  align-items: center;
+  padding-bottom: 20px;
+}
+
+.widgetValue {
+  font-size: 1.8rem;
+  font-weight: 500;
+  margin-top: auto;
+  margin-bottom: 5px;
+}
+.widgetDesc {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* ШКАЛА УФ-ІНДЕКСУ */
+.uvScaleContainer {
+  position: relative;
+  width: 100%;
+  height: 6px;
+  background: linear-gradient(
+    to right,
+    #4ade80,
+    #facc15,
+    #fb923c,
+    #ef4444,
+    #a855f7
+  );
+  border-radius: 3px;
+  margin-top: auto;
+  margin-bottom: 5px;
+}
+.uvDonut {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 12px;
+  height: 12px;
+  background: transparent;
+  border: 3px solid whitesmoke;
+  border-radius: 50%;
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
+}
+
+/* КОМПАС ВІТРУ */
+.compassContainer {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  margin: 10px auto;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(0, 0, 0, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.windDegrees {
+  position: absolute;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: white;
+  z-index: 2;
+}
+
+.compassMark {
+  position: absolute;
+  font-size: 0.7rem;
+  font-weight: 600;
+  opacity: 0.5;
+}
+
+.compassArrow {
+  color: white;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
+}
+
+.pressureContainer {
+  position: relative;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 25px;
+}
+
+.pressureSvg {
+  width: 100%;
+  max-width: 100px;
+  height: auto;
+  overflow: visible;
+}
+
+.pressureLabels {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 110px;
+  font-size: 0.65rem;
+  opacity: 0.5;
+  margin-top: -5px;
+}
+
+.pressureValueAbs {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -20%);
+  font-size: 1.4rem;
+  font-weight: 500;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  line-height: 1;
+}
+
+.pressureNumber {
+  font-size: 1.6rem;
+  font-weight: 500;
+  letter-spacing: -0.5px;
+}
+
+.pressureUnit {
+  font-size: 0.75rem;
+  font-weight: 400;
+  opacity: 0.6;
+  margin-top: 2px;
+}

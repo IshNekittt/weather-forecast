@@ -1,8 +1,8 @@
 import React from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { clearRegion } from "../../store/appSlice";
+import { clearRegion, openFullModal } from "../../store/appSlice";
 import { useGetWeatherQuery } from "../../store/weatherApi";
-import { X, Wind, Sun, Droplets, Gauge } from "lucide-react"; // Красивые иконки
+import { X, Wind, Sun, Droplets, Gauge } from "lucide-react";
 import styles from "./BriefWidget.module.css";
 import { skipToken } from "@reduxjs/toolkit/query";
 
@@ -25,10 +25,13 @@ const BriefWidget = () => {
       // Точное позиционирование в пиксель области в процентах!
       style={{ left: `${region.xPercent}%`, top: `${region.yPercent}%` }}
     >
-      <div className={styles.card}>
+      <div className={styles.card} onClick={() => dispatch(openFullModal())}>
         <button
           className={styles.closeBtn}
-          onClick={() => dispatch(clearRegion())}
+          onClick={(e) => {
+            e.stopPropagation();
+            dispatch(clearRegion());
+          }}
         >
           <X size={18} />
         </button>
