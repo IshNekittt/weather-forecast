@@ -1,0 +1,120 @@
+/* Сам контейнер позиционируется в точку клика */
+.widgetContainer {
+  position: absolute;
+  /* Центрируем точку привязки строго посередине внизу */
+  transform: translate(-50%, -100%);
+  /* Отступ вверх, чтобы уголок не перекрывал саму точку */
+  margin-top: -10px;
+  z-index: 10;
+  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes popIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -90%) scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
+}
+
+.card {
+  width: max-content;
+  min-width: 240px;
+  background: rgba(15, 15, 15, 0.7);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  padding: 15px 20px;
+  border-radius: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  position: relative;
+  text-align: center;
+}
+
+/* МАГИЯ УГОЛКА: Треугольник, указывающий на область */
+.card::after {
+  content: "";
+  position: absolute;
+  bottom: -10px; /* Выпирает вниз */
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 10px 10px 0;
+  border-style: solid;
+  /* Цвет должен совпадать с фоном карточки (примерно) */
+  border-color: rgba(15, 15, 15, 0.7) transparent transparent transparent;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 10px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.6);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: color 0.2s ease;
+}
+
+.closeBtn:hover {
+  color: white;
+}
+
+.header {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 10px;
+  padding-right: 20px;
+}
+
+.mainTemp {
+  font-size: 2.5rem;
+  font-weight: bold;
+  line-height: 1;
+  margin-bottom: 5px;
+}
+
+.feelsLike {
+  font-size: 0.85rem;
+  opacity: 0.7;
+  margin-bottom: 12px;
+}
+
+.detailsGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  text-align: left;
+  font-size: 0.85rem;
+}
+
+.detailItem {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  opacity: 0.9;
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100px;
+  font-size: 1rem;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+}
