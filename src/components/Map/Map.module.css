@@ -29,3 +29,9 @@
   fill: rgba(255, 255, 255, 0.3);
   stroke-width: 2px;
 }
+
+.mapRegion:hover,
+.selectedRegion {
+  fill: rgba(255, 255, 255, 0.3);
+  stroke-width: 2px;
+}

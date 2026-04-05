@@ -53,7 +53,7 @@ const BriefWidget = () => {
             <div className={styles.detailsGrid}>
               <div className={styles.detailItem}>
                 <Wind size={14} />
-                {data.current.wind_speed_10m} км/год
+                {data.current.wind_speed_10m} м/с
               </div>
               <div className={styles.detailItem}>
                 <Sun size={14} />

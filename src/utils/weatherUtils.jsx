@@ -41,13 +41,18 @@ export const getNext24Hours = (hourlyData) => {
   const next24 = [];
   for (let i = startIndex; i < startIndex + 24; i++) {
     if (!hourlyData.time[i]) break;
+    const date = new Date(hourlyData.time[i]);
     next24.push({
-      time: new Date(hourlyData.time[i]).toLocaleTimeString("uk-UA", {
+      time: date.toLocaleTimeString("uk-UA", {
         hour: "2-digit",
         minute: "2-digit",
       }),
       temp: Math.round(hourlyData.temperature_2m[i]),
       code: hourlyData.weather_code[i],
+      precipProb: hourlyData.precipitation_probability
+        ? hourlyData.precipitation_probability[i]
+        : 0,
+      index: i,
     });
   }
   if (next24.length > 0) next24[0].time = "Зараз";

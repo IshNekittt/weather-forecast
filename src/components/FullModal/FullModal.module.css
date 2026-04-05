@@ -55,7 +55,7 @@
 }
 
 .content {
-  max-width: 800px;
+  max-width: 850px;
   margin: 0 auto;
   padding: 40px 20px;
   display: flex;
@@ -66,6 +66,9 @@
 @media (max-width: 767px) {
   .content {
     max-width: 460px;
+  }
+  .dailyPanel {
+    min-height: 530px;
   }
 }
 
@@ -122,7 +125,7 @@
 /* ПО ЧАСАМ (ГОРИЗОНТАЛЬНЫЙ СКРОЛЛ) */
 .hourlyScroll {
   display: flex;
-  gap: 25px;
+  gap: 21.5px;
   overflow-x: auto;
   padding-bottom: 10px;
   /* Прячем скроллбар, но оставляем скролл */
@@ -136,9 +139,19 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
   min-width: 45px;
+  height: 105px;
 }
+
+.hourIconWrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+}
+
 .hourTime {
   font-size: 0.9rem;
   font-weight: 500;
@@ -148,17 +161,6 @@
   font-weight: bold;
 }
 
-/* ПРОГНОЗ НА 10 ДНЕЙ */
-.dailyRow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-}
-.dailyRow:last-child {
-  border-bottom: none;
-}
 .dayName {
   flex: 1;
   font-size: 1.1rem;
@@ -191,6 +193,9 @@
 @media (min-width: 768px) {
   .widgetsGrid {
     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  }
+  .hourlyScroll {
+    gap: 15.25px;
   }
 }
 
@@ -251,9 +256,9 @@
 /* КОМПАС ВІТРУ */
 .compassContainer {
   position: relative;
-  width: 80px;
-  height: 80px;
-  margin: 10px auto;
+  width: 84px;
+  height: 84px;
+  margin: -10px auto 10px auto;
   border-radius: 50%;
   border: 1px solid rgba(255, 255, 255, 0.15);
   background: rgba(0, 0, 0, 0.1);
@@ -332,4 +337,140 @@
   font-weight: 400;
   opacity: 0.6;
   margin-top: 2px;
+}
+
+.dailyRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex: 1;
+  padding: 0 12px;
+  margin: 0 -12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  cursor: pointer;
+  transition:
+    background 0.2s,
+    border-color 0.2s;
+  border-radius: 12px;
+}
+
+.dailyRow:last-child {
+  border-bottom: none;
+}
+
+.dailyRow:hover {
+  background: rgba(255, 255, 255, 0.1);
+  border-bottom-color: transparent;
+}
+.sunSvg {
+  width: 100%;
+  max-width: 130px;
+  height: auto;
+  margin: 10px auto;
+  overflow: visible;
+}
+.sunTimes {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 0.75rem;
+  opacity: 0.8;
+  margin-top: -5px;
+}
+
+.innerModalOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+}
+
+.innerModalContent {
+  background: rgba(30, 30, 30, 0.8);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 400px;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+}
+
+.innerModalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 15px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 500;
+  font-size: 1.1rem;
+}
+
+.innerModalScroll {
+  overflow-y: auto;
+  padding: 10px 20px;
+}
+
+.innerHourRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.innerHourRow:last-child {
+  border-bottom: none;
+}
+
+/* ВЕРОЯТНОСТЬ ДОЖДЯ */
+.precipProbText {
+  color: #38bdf8;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+/* ДЕСКТОП: Две колонки (Прогноз 10 дней слева, виджеты справа) */
+.bottomLayout {
+  display: grid;
+  gap: 15px;
+  grid-template-columns: 1fr; /* На мобилке всё в один столбик */
+}
+
+@media (min-width: 768px) {
+  .bottomLayout {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.clickablePanel {
+  cursor: pointer;
+  transition:
+    transform 0.2s,
+    background 0.2s;
+}
+.clickablePanel:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: scale(0.98);
+}
+
+.dailyPanel {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.dailyList {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
 }
