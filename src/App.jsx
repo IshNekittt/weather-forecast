@@ -15,12 +15,25 @@ function App() {
         >
           <Map />
         </Suspense>
-        <Toaster position="bottom-center" />
       </div>
 
       <Suspense fallback={null}>
         <FullModal />
       </Suspense>
+      <Toaster
+        position="top-center"
+        containerStyle={{
+          zIndex: 9999,
+        }}
+        toastOptions={{
+          style: {
+            background: "rgba(40, 40, 40, 0.5)",
+            color: "#fff",
+            backdropFilter: "blur(10px)",
+            border: "1px solid rgba(255,255,255,0.15)",
+          },
+        }}
+      />
     </div>
   );
 }

@@ -192,7 +192,7 @@
 /* На экранах от 768px (планшеты и ПК) работает гибкая сетка */
 @media (min-width: 768px) {
   .widgetsGrid {
-    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    grid-column: 2;
   }
   .hourlyScroll {
     gap: 15.25px;
@@ -397,7 +397,7 @@
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 20px;
   width: 100%;
-  max-width: 400px;
+  max-width: 460px;
   max-height: 80vh;
   display: flex;
   flex-direction: column;

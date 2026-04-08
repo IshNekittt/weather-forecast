@@ -1,12 +1,17 @@
 import React, { useState } from "react";
 import { useSelector, useDispatch } from "react-redux";
-import { clearRegion } from "../../store/appSlice";
+import {
+  clearRegion,
+  toggleAiMode,
+  setAiCalculation,
+} from "../../store/appSlice";
 import { useGetWeatherQuery } from "../../store/weatherApi";
 import {
   getWeatherProps,
   getNext24Hours,
   capitalize,
 } from "../../utils/weatherUtils";
+import { generateLocalForecast } from "../../utils/aiForecastUtils";
 import {
   X,
   CalendarDays,
@@ -19,27 +24,79 @@ import {
   Sunrise,
   CloudRain,
   ThermometerSun,
+  Sparkles,
 } from "lucide-react";
 import { skipToken } from "@reduxjs/toolkit/query";
+import toast from "react-hot-toast";
 import styles from "./FullModal.module.css";
 
 const FullModal = () => {
   const dispatch = useDispatch();
-  const { selectedRegion, isFullModalOpen } = useSelector((state) => state.app);
+  const { selectedRegion, isFullModalOpen, isAiMode, aiCalculations } =
+    useSelector((state) => state.app);
 
   const [selectedDay, setSelectedDay] = useState(null);
-  const [metricModal, setMetricModal] = useState(null); // Стейт для детализации виджетов
+  const [metricModal, setMetricModal] = useState(null);
 
-  const { data } = useGetWeatherQuery(
+  const { data: apiData } = useGetWeatherQuery(
     selectedRegion
       ? { lat: selectedRegion.lat, lon: selectedRegion.lon }
       : skipToken,
     { skip: !selectedRegion },
   );
 
-  if (!isFullModalOpen || !data) return null;
+  const handleAiToggle = async (e) => {
+    e.stopPropagation();
 
-  const { current, daily, hourly } = data;
+    if (isAiMode) {
+      dispatch(toggleAiMode());
+      toast.success("Повернуто до даних агрегатора");
+      return;
+    }
+
+    const cachedCalc = aiCalculations[selectedRegion.name];
+    const isCacheValid =
+      cachedCalc && Date.now() - cachedCalc.timestamp < 3600000;
+
+    if (isCacheValid) {
+      dispatch(toggleAiMode());
+      toast.success("Завантажено локальний AI прогноз");
+    } else {
+      const calcPromise = generateLocalForecast(
+        apiData,
+        selectedRegion.lat,
+        selectedRegion.lon,
+      );
+
+      toast.promise(calcPromise, {
+        loading: "Математичний розрахунок прогнозу...",
+        success: "Локальний прогноз побудовано!",
+        error: "Помилка розрахунку",
+      });
+
+      try {
+        const calculatedData = await calcPromise;
+        dispatch(
+          setAiCalculation({
+            regionName: selectedRegion.name,
+            data: calculatedData,
+          }),
+        );
+        dispatch(toggleAiMode());
+      } catch (err) {
+        console.error(err);
+      }
+    }
+  };
+
+  if (!isFullModalOpen || !apiData) return null;
+
+  const displayData =
+    isAiMode && aiCalculations[selectedRegion.name]
+      ? aiCalculations[selectedRegion.name].data
+      : apiData;
+
+  const { current, daily, hourly } = displayData;
   const currentProps = getWeatherProps(current.weather_code);
   const hourly24 = getNext24Hours(hourly);
 
@@ -204,15 +261,28 @@ const FullModal = () => {
           : 0;
         let extra = null;
 
-        if (metricModal.key === "visibility") val = (val / 1000).toFixed(1);
-        if (metricModal.key === "pressure_msl") val = Math.round(val);
+        // ПРИНУДИТЕЛЬНОЕ UI ОКРУГЛЕНИЕ ДЛЯ СПИСКОВ
+        if (metricModal.key === "visibility") {
+          val = Math.round(val / 1000); // 0 знаков в км
+        } else if (
+          metricModal.key === "pressure_msl" ||
+          metricModal.key === "relative_humidity_2m" ||
+          metricModal.key === "temperature_2m_mean" ||
+          metricModal.key === "temperature_2m"
+        ) {
+          val = Math.round(val); // 0 знаков
+        } else if (metricModal.key === "uv_index") {
+          val = Number(val).toFixed(2); // Ровно 2 знака (например 0.00 или 2.10)
+        } else if (metricModal.key === "precipitation") {
+          val = Number(val).toFixed(1); // Ровно 1 знак
+        }
 
-        // ВЕТЕР: Точно такая же структура центрального блока, как у погоды
+        // СПЕЦ. ЛОГИКА ДЛЯ ВЕТРА
         if (metricModal.key === "wind_speed_10m") {
-          val = (val / 3.6).toFixed(1);
+          val = (val / 3.6).toFixed(1); // 1 знак для м/с
           const dir = hourly.wind_direction_10m
-            ? hourly.wind_direction_10m[h.index]
-            : 0;
+            ? Math.round(hourly.wind_direction_10m[h.index])
+            : 0; // 0 знаков для угла
 
           extra = (
             <div
@@ -304,16 +374,16 @@ const FullModal = () => {
                 {/* ЛЕВАЯ КОЛОНКА */}
                 <span style={{ flex: 1, textAlign: "left" }}>{item.label}</span>
 
-                {/* ЦЕНТР (Если нет экстра-контента, ставим пустой блок такой же ширины для баланса) */}
-                {item.extra ? (
-                  item.extra
-                ) : (
-                  <div style={{ width: "75px" }}></div>
-                )}
+                {item.extra && item.extra}
 
                 {/* ПРАВАЯ КОЛОНКА */}
                 <span
-                  style={{ flex: 1, textAlign: "right", fontWeight: "bold" }}
+                  style={{
+                    flex: item.extra ? 1 : 1.5,
+                    textAlign: "right",
+                    fontWeight: "bold",
+                    lineHeight: 1.4,
+                  }}
                 >
                   {item.value}
                 </span>
@@ -342,6 +412,23 @@ const FullModal = () => {
 
       <button
         className={styles.closeBtn}
+        style={{
+          right: "70px",
+          background: isAiMode
+            ? "rgba(170, 59, 255, 0.5)"
+            : "rgba(255, 255, 255, 0.2)",
+        }}
+        onClick={handleAiToggle}
+        title="Локальний розрахунок прогнозу"
+      >
+        <Sparkles
+          size={20}
+          color={isAiMode ? "white" : "rgba(255,255,255,0.7)"}
+        />
+      </button>
+
+      <button
+        className={styles.closeBtn}
         onClick={() => dispatch(clearRegion())}
       >
         <X size={24} />
@@ -350,7 +437,24 @@ const FullModal = () => {
       <div className={styles.content}>
         {/* ХЕДЕР (пропускает клик на фон) */}
         <div className={styles.header}>
-          <h1 className={styles.regionName}>{selectedRegion.name}</h1>
+          <h1 className={styles.regionName}>
+            {selectedRegion.name}
+            {isAiMode && (
+              <span
+                style={{
+                  fontSize: "0.8rem",
+                  background: "#aa3bff",
+                  padding: "2px 8px",
+                  borderRadius: "10px",
+                  marginLeft: "10px",
+                  verticalAlign: "middle",
+                  whiteSpace: "nowrap",
+                }}
+              >
+                AI Forecast
+              </span>
+            )}
+          </h1>
           <div className={styles.currentTemp}>
             {Math.round(current.temperature_2m)}°
           </div>
@@ -388,46 +492,48 @@ const FullModal = () => {
         {/* НОВАЯ РАСКЛАДКА НА ДЕСКТОПЕ: ДВЕ КОЛОНКИ */}
         <div className={styles.bottomLayout}>
           {/* ЛЕВАЯ КОЛОНКА (10 ДНЕЙ) */}
-          <div
-            className={`${styles.glassPanel} ${styles.dailyPanel}`}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className={styles.panelTitle}>
-              <CalendarDays size={14} /> Прогноз на 10 днів
-            </div>
-            <div className={styles.dailyList}>
-              {daily.time.map((dateString, i) => {
-                const dayName =
-                  i === 0
-                    ? "Сьогодні"
-                    : capitalize(
-                        new Date(dateString).toLocaleDateString("uk-UA", {
-                          weekday: "short",
-                        }),
-                      );
-                return (
-                  <div
-                    key={i}
-                    className={styles.dailyRow}
-                    onClick={() => setSelectedDay(i)}
-                  >
-                    <span className={styles.dayName}>{dayName}</span>
-                    <span className={styles.dayIcon}>
-                      {getWeatherProps(daily.weather_code[i]).icon}
-                    </span>
-                    <div className={styles.dayTemps}>
-                      <span className={styles.tempMin}>
-                        від {Math.round(daily.temperature_2m_min[i])}°
+          {!isAiMode && (
+            <div
+              className={`${styles.glassPanel} ${styles.dailyPanel}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.panelTitle}>
+                <CalendarDays size={14} /> Прогноз на 10 днів
+              </div>
+              <div className={styles.dailyList}>
+                {daily.time.map((dateString, i) => {
+                  const dayName =
+                    i === 0
+                      ? "Сьогодні"
+                      : capitalize(
+                          new Date(dateString).toLocaleDateString("uk-UA", {
+                            weekday: "short",
+                          }),
+                        );
+                  return (
+                    <div
+                      key={i}
+                      className={styles.dailyRow}
+                      onClick={() => setSelectedDay(i)}
+                    >
+                      <span className={styles.dayName}>{dayName}</span>
+                      <span className={styles.dayIcon}>
+                        {getWeatherProps(daily.weather_code[i]).icon}
                       </span>
-                      <span className={styles.tempMax}>
-                        до {Math.round(daily.temperature_2m_max[i])}°
-                      </span>
+                      <div className={styles.dayTemps}>
+                        <span className={styles.tempMin}>
+                          від {Math.round(daily.temperature_2m_min[i])}°
+                        </span>
+                        <span className={styles.tempMax}>
+                          до {Math.round(daily.temperature_2m_max[i])}°
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ПРАВАЯ КОЛОНКА (СЕТКА ВИДЖЕТОВ) */}
           <div

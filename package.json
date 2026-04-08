@@ -19,7 +19,9 @@
     "react-dom": "^19.2.4",
     "react-hot-toast": "^2.6.0",
     "react-redux": "^9.2.0",
-    "redux-persist": "^6.0.0"
+    "redux-persist": "^6.0.0",
+    "regression": "^2.0.1",
+    "suncalc": "^1.9.0"
   },
   "devDependencies": {
     "@babel/core": "^7.29.0",
