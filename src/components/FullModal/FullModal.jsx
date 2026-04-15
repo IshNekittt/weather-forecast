@@ -100,6 +100,15 @@ const FullModal = () => {
   const currentProps = getWeatherProps(current.weather_code);
   const hourly24 = getNext24Hours(hourly);
 
+  const todayStr = new Date().toISOString().split("T")[0];
+  let todayIdx = daily.time.findIndex((t) => t.startsWith(todayStr));
+  if (todayIdx === -1) todayIdx = 0;
+
+  const futureDaysIndices = [];
+  for (let i = todayIdx; i < daily.time.length; i++) {
+    futureDaysIndices.push(i);
+  }
+
   // --- МАТЕМАТИКА ВИДЖЕТОВ ---
   const uvPercent = Math.min((current.uv_index / 11) * 100, 100);
 
@@ -109,9 +118,8 @@ const FullModal = () => {
   const pressurePercent = (currentP - minP) / (maxP - minP);
   const pressureRotation = -135 + pressurePercent * 270;
 
-  // Математика Солнца
-  const sunrise = new Date(daily.sunrise[0]);
-  const sunset = new Date(daily.sunset[0]);
+  const sunrise = new Date(daily.sunrise[todayIdx]);
+  const sunset = new Date(daily.sunset[todayIdx]);
   const now = new Date();
   let daylightPercent = (now - sunrise) / (sunset - sunrise);
   daylightPercent = Math.max(0, Math.min(1, daylightPercent));
@@ -229,9 +237,10 @@ const FullModal = () => {
 
     let list = [];
     if (metricModal.isDaily) {
-      list = daily.time.map((t, i) => {
+      list = futureDaysIndices.map((dIdx, loopIdx) => {
+        const t = daily.time[dIdx];
         const dayName =
-          i === 0
+          loopIdx === 0
             ? "Сьогодні"
             : capitalize(
                 new Date(t).toLocaleDateString("uk-UA", {
@@ -240,17 +249,18 @@ const FullModal = () => {
                   month: "long",
                 }),
               );
+
         let valStr = "";
         if (metricModal.key === "sun") {
-          valStr = `Схід ${new Date(daily.sunrise[i]).toLocaleTimeString(
+          valStr = `Схід ${new Date(daily.sunrise[dIdx]).toLocaleTimeString(
             "uk-UA",
             timeOpts,
-          )} • Захід ${new Date(daily.sunset[i]).toLocaleTimeString(
+          )} • Захід ${new Date(daily.sunset[dIdx]).toLocaleTimeString(
             "uk-UA",
             timeOpts,
           )}`;
         } else {
-          valStr = `${Math.round(daily[metricModal.key][i])} ${metricModal.unit}`;
+          valStr = `${Math.round(daily[metricModal.key][dIdx])} ${metricModal.unit}`;
         }
         return { label: dayName, value: valStr };
       });
@@ -460,8 +470,8 @@ const FullModal = () => {
           </div>
           <div className={styles.condition}>{currentProps.text}</div>
           <div className={styles.highLow}>
-            Макс.: {Math.round(daily.temperature_2m_max[0])}°, Мін.:{" "}
-            {Math.round(daily.temperature_2m_min[0])}°
+            Макс.: {Math.round(daily.temperature_2m_max[todayIdx])}°, Мін.:{" "}
+            {Math.round(daily.temperature_2m_min[todayIdx])}°
           </div>
         </div>
 
@@ -501,9 +511,10 @@ const FullModal = () => {
                 <CalendarDays size={14} /> Прогноз на 10 днів
               </div>
               <div className={styles.dailyList}>
-                {daily.time.map((dateString, i) => {
+                {futureDaysIndices.map((dIdx, loopIdx) => {
+                  const dateString = daily.time[dIdx];
                   const dayName =
-                    i === 0
+                    loopIdx === 0
                       ? "Сьогодні"
                       : capitalize(
                           new Date(dateString).toLocaleDateString("uk-UA", {
@@ -512,20 +523,20 @@ const FullModal = () => {
                         );
                   return (
                     <div
-                      key={i}
+                      key={dIdx}
                       className={styles.dailyRow}
-                      onClick={() => setSelectedDay(i)}
+                      onClick={() => setSelectedDay(dIdx)}
                     >
                       <span className={styles.dayName}>{dayName}</span>
                       <span className={styles.dayIcon}>
-                        {getWeatherProps(daily.weather_code[i]).icon}
+                        {getWeatherProps(daily.weather_code[dIdx]).icon}
                       </span>
                       <div className={styles.dayTemps}>
                         <span className={styles.tempMin}>
-                          від {Math.round(daily.temperature_2m_min[i])}°
+                          від {Math.round(daily.temperature_2m_min[dIdx])}°
                         </span>
                         <span className={styles.tempMax}>
-                          до {Math.round(daily.temperature_2m_max[i])}°
+                          до {Math.round(daily.temperature_2m_max[dIdx])}°
                         </span>
                       </div>
                     </div>
@@ -605,7 +616,7 @@ const FullModal = () => {
                 <span style={{ fontSize: "1rem" }}>мм</span>
               </div>
               <div className={styles.widgetDesc}>
-                За добу: {daily.precipitation_sum[0].toFixed(1)} мм
+                За добу: {daily.precipitation_sum[todayIdx].toFixed(1)} мм
               </div>
             </div>
 
@@ -625,7 +636,7 @@ const FullModal = () => {
                 <ThermometerSun size={14} /> СЕРЕДНЯ ТЕМП.
               </div>
               <div className={styles.widgetValue}>
-                {Math.round(daily.temperature_2m_mean[0])}°
+                {Math.round(daily.temperature_2m_mean[todayIdx])}°
               </div>
               <div className={styles.widgetDesc}>В середньому за добу</div>
             </div>

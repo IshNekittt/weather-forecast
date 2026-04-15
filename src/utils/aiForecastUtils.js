@@ -2,34 +2,48 @@ import regression from "regression";
 import SunCalc from "suncalc";
 
 /**
- * МАТЕМАТИЧНА МОДЕЛЬ: Лінійна регресія з добовою сезонністю
+ * МАТЕМАТИЧНА МОДЕЛЬ: Лінійна регресія з експоненційним згладжуванням добової сезонності.
+ * Чому це круто: Тренд рахується за всіма даними, але відхилення (ніч/день)
+ * береться з більшою вагою для вчорашнього дня, ніж для дня 5 діб тому.
  */
 const predictParam = (dataPoints, futureX, min = -100, max = 10000) => {
+  // 1. Глобальний тренд (лінійна регресія по всіх 120 годинах)
   const result = regression.linear(dataPoints, { precision: 4 });
   const trendValue = result.predict(futureX)[1];
 
-  let sumDeviation = 0;
-  let count = 0;
+  // 2. Експоненційне згладжування добової сезонності
+  let weightedSumDeviation = 0;
+  let totalWeight = 0;
 
   for (let i = 0; i < dataPoints.length; i++) {
     const pastX = dataPoints[i][0];
     const pastVal = dataPoints[i][1];
 
+    // Шукаємо ту саму годину в минулі дні (різниця кратна 24)
     if ((futureX - pastX) % 24 === 0) {
       const pastTrendValue = result.predict(pastX)[1];
-      sumDeviation += pastVal - pastTrendValue;
-      count++;
+      const deviation = pastVal - pastTrendValue;
+
+      // ВАГА: Чим ближче pastX до futureX, тим більша вага.
+      // Наприклад, для вчора (futureX - 24) вага буде великою, а для 5 днів тому - маленькою.
+      // Формула: 1 / (відстань у днях). Якщо вчора (1 день) = вага 1. Якщо 5 днів тому = вага 0.2.
+      const daysAgo = (futureX - pastX) / 24;
+      const weight = 1 / daysAgo;
+
+      weightedSumDeviation += deviation * weight;
+      totalWeight += weight;
     }
   }
 
-  const avgDeviation = count > 0 ? sumDeviation / count : 0;
+  // 3. Збираємо фінальний прогноз
+  const avgDeviation = totalWeight > 0 ? weightedSumDeviation / totalWeight : 0;
   let predicted = trendValue + avgDeviation;
 
   return Math.max(min, Math.min(max, predicted));
 };
 
 export const generateLocalForecast = async (apiData, lat, lon) => {
-  await new Promise((resolve) => setTimeout(resolve, 800));
+  // ТАЙМАУТ ВИДАЛЕНО! Розрахунок відбувається миттєво.
 
   const { hourly } = apiData;
   const now = new Date();
@@ -91,16 +105,16 @@ export const generateLocalForecast = async (apiData, lat, lon) => {
     const futureX = currentIndex - historyStart + i;
     const futureTime = new Date(now.getTime() + i * 3600000).toISOString();
 
-    // СУВОРО ОКРУГЛЮЄМО ДАНІ ЗА ТВОЇМИ ПРАВИЛАМИ
-    const t = Math.round(predictParam(trainData.temp, futureX)); // Темп: 0 знаків (як у UI)
-    const p = Math.round(predictParam(trainData.pressure, futureX, 900, 1100)); // Тиск: 0 знаків
-    const h = Math.round(predictParam(trainData.humidity, futureX, 0, 100)); // Вологість: 0 знаків
-    let uv = Number(predictParam(trainData.uv, futureX, 0, 12).toFixed(2)); // УФ: 2 знаки
-    const w = Number(predictParam(trainData.wind, futureX, 0, 150).toFixed(1)); // Вітер швидкість: 1 знак
+    // СУВОРО ОКРУГЛЮЄМО ДАНІ
+    const t = Math.round(predictParam(trainData.temp, futureX));
+    const p = Math.round(predictParam(trainData.pressure, futureX, 900, 1100));
+    const h = Math.round(predictParam(trainData.humidity, futureX, 0, 100));
+    let uv = Number(predictParam(trainData.uv, futureX, 0, 12).toFixed(2));
+    const w = Number(predictParam(trainData.wind, futureX, 0, 150).toFixed(1));
     const d =
-      Math.round(Math.abs(predictParam(trainData.dir, futureX, 0, 360))) % 360; // Вітер кут: 0 знаків
-    const v = Math.round(predictParam(trainData.vis, futureX, 0, 50000)); // Видимість: 0 знаків
-    let pr = Number(predictParam(trainData.precip, futureX, 0, 50).toFixed(1)); // Опади: 1 знак
+      Math.round(Math.abs(predictParam(trainData.dir, futureX, 0, 360))) % 360;
+    const v = Math.round(predictParam(trainData.vis, futureX, 0, 50000));
+    let pr = Number(predictParam(trainData.precip, futureX, 0, 50).toFixed(1));
 
     const hour = new Date(futureTime).getHours();
     if (hour < 6 || hour > 19) uv = 0;
@@ -141,7 +155,7 @@ export const generateLocalForecast = async (apiData, lat, lon) => {
       temperature_2m: aiHourly.temperature_2m[0],
       apparent_temperature: Math.round(
         aiHourly.temperature_2m[0] - aiHourly.wind_speed_10m[0] * 0.1,
-      ), // Ощущается как: 0 знаків
+      ),
       relative_humidity_2m: aiHourly.relative_humidity_2m[0],
       pressure_msl: aiHourly.pressure_msl[0],
       wind_speed_10m: aiHourly.wind_speed_10m[0],
@@ -152,18 +166,18 @@ export const generateLocalForecast = async (apiData, lat, lon) => {
       dew_point_2m: Math.round(
         aiHourly.temperature_2m[0] -
           (100 - aiHourly.relative_humidity_2m[0]) / 5,
-      ), // Точка роси: 0 знаків
+      ),
       precipitation: aiHourly.precipitation[0],
     },
     hourly: aiHourly,
     daily: {
       time: [now.toISOString()],
-      temperature_2m_max: [Math.round(maxTemp)], // 0 знаків
-      temperature_2m_min: [Math.round(minTemp)], // 0 знаків
-      temperature_2m_mean: [Math.round((maxTemp + minTemp) / 2)], // Середня темп: 0 знаків
-      sunrise: [sunTimes.sunrise.toISOString()], // Тільки час
-      sunset: [sunTimes.sunset.toISOString()], // Тільки час
-      precipitation_sum: [Number(precipSum.toFixed(1))], // 1 знак
+      temperature_2m_max: [Math.round(maxTemp)],
+      temperature_2m_min: [Math.round(minTemp)],
+      temperature_2m_mean: [Math.round((maxTemp + minTemp) / 2)],
+      sunrise: [sunTimes.sunrise.toISOString()],
+      sunset: [sunTimes.sunset.toISOString()],
+      precipitation_sum: [Number(precipSum.toFixed(1))],
       weather_code: [aiHourly.weather_code[12]],
     },
     isAiGenerated: true,
