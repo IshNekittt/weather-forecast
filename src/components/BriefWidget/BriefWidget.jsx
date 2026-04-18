@@ -10,19 +10,16 @@ const BriefWidget = () => {
   const dispatch = useDispatch();
   const region = useSelector((state) => state.app.selectedRegion);
 
-  // RTK Query: Запрос отправляется только если есть lat/lon. И кэшируется на 1 час!
   const { data, isFetching, isError } = useGetWeatherQuery(
     region ? { lat: region.lat, lon: region.lon } : skipToken,
-    { skip: !region }, // Если регион не выбран - скипаем запрос
+    { skip: !region },
   );
 
-  // Твое условие: изначально модалка полностью скрыта
   if (!region) return null;
 
   return (
     <div
       className={styles.widgetContainer}
-      // Точное позиционирование в пиксель области в процентах!
       style={{ left: `${region.xPercent}%`, top: `${region.yPercent}%` }}
     >
       <div className={styles.card} onClick={() => dispatch(openFullModal())}>

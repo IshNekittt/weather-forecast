@@ -109,7 +109,6 @@ const FullModal = () => {
     futureDaysIndices.push(i);
   }
 
-  // --- МАТЕМАТИКА ВИДЖЕТОВ ---
   const uvPercent = Math.min((current.uv_index / 11) * 100, 100);
 
   const minP = 970;
@@ -129,7 +128,6 @@ const FullModal = () => {
   const sunriseStr = sunrise.toLocaleTimeString("uk-UA", timeOpts);
   const sunsetStr = sunset.toLocaleTimeString("uk-UA", timeOpts);
 
-  // --- 1. МОДАЛКА: ПРОГНОЗ ПО ЧАСАМ НА ВЫБРАННЫЙ ДЕНЬ ---
   const renderHourlyForSelectedDay = () => {
     if (selectedDay === null) return null;
     const startIndex = selectedDay * 24;
@@ -182,10 +180,8 @@ const FullModal = () => {
           <div className={styles.innerModalScroll}>
             {dayHours.map((h, idx) => (
               <div key={idx} className={styles.innerHourRow}>
-                {/* ЛЕВАЯ КОЛОНКА: Занимает равную долю, выравнивание влево */}
                 <span style={{ flex: 1, textAlign: "left" }}>{h.time}</span>
 
-                {/* ЦЕНТР: Жестко 75px. Состоит из иконки (24px) и процентов (30px) */}
                 <div
                   style={{
                     display: "flex",
@@ -217,7 +213,6 @@ const FullModal = () => {
                   </div>
                 </div>
 
-                {/* ПРАВАЯ КОЛОНКА: Занимает равную долю, выравнивание вправо */}
                 <span
                   style={{ flex: 1, textAlign: "right", fontWeight: "bold" }}
                 >
@@ -231,7 +226,6 @@ const FullModal = () => {
     );
   };
 
-  // --- 2. МОДАЛКА: ДЕТАЛИЗАЦИЯ ВИДЖЕТОВ (ВЕТЕР, УФ И Т.Д.) ---
   const renderMetricModal = () => {
     if (!metricModal) return null;
 
@@ -271,28 +265,26 @@ const FullModal = () => {
           : 0;
         let extra = null;
 
-        // ПРИНУДИТЕЛЬНОЕ UI ОКРУГЛЕНИЕ ДЛЯ СПИСКОВ
         if (metricModal.key === "visibility") {
-          val = Math.round(val / 1000); // 0 знаков в км
+          val = Math.round(val / 1000);
         } else if (
           metricModal.key === "pressure_msl" ||
           metricModal.key === "relative_humidity_2m" ||
           metricModal.key === "temperature_2m_mean" ||
           metricModal.key === "temperature_2m"
         ) {
-          val = Math.round(val); // 0 знаков
+          val = Math.round(val);
         } else if (metricModal.key === "uv_index") {
-          val = Number(val).toFixed(2); // Ровно 2 знака (например 0.00 или 2.10)
+          val = Number(val).toFixed(2);
         } else if (metricModal.key === "precipitation") {
-          val = Number(val).toFixed(1); // Ровно 1 знак
+          val = Number(val).toFixed(1);
         }
 
-        // СПЕЦ. ЛОГИКА ДЛЯ ВЕТРА
         if (metricModal.key === "wind_speed_10m") {
-          val = (val / 3.6).toFixed(1); // 1 знак для м/с
+          val = (val / 3.6).toFixed(1);
           const dir = hourly.wind_direction_10m
             ? Math.round(hourly.wind_direction_10m[h.index])
-            : 0; // 0 знаков для угла
+            : 0;
 
           extra = (
             <div
@@ -381,12 +373,10 @@ const FullModal = () => {
           <div className={styles.innerModalScroll}>
             {list.map((item, idx) => (
               <div key={idx} className={styles.innerHourRow}>
-                {/* ЛЕВАЯ КОЛОНКА */}
                 <span style={{ flex: 1, textAlign: "left" }}>{item.label}</span>
 
                 {item.extra && item.extra}
 
-                {/* ПРАВАЯ КОЛОНКА */}
                 <span
                   style={{
                     flex: item.extra ? 1 : 1.5,
@@ -406,7 +396,6 @@ const FullModal = () => {
   };
 
   return (
-    // Главный оверлей: клик по пустому месту закрывает большую модалку
     <div
       className={styles.modalOverlay}
       onClick={() => dispatch(clearRegion())}
@@ -445,7 +434,6 @@ const FullModal = () => {
       </button>
 
       <div className={styles.content}>
-        {/* ХЕДЕР (пропускает клик на фон) */}
         <div className={styles.header}>
           <h1 className={styles.regionName}>
             {selectedRegion.name}
@@ -475,7 +463,6 @@ const FullModal = () => {
           </div>
         </div>
 
-        {/* ПРОГНОЗ НА 24 ЧАСА */}
         <div className={styles.glassPanel} onClick={(e) => e.stopPropagation()}>
           <div className={styles.panelTitle}>
             <Clock size={14} /> Прогноз на 24 години
@@ -484,7 +471,7 @@ const FullModal = () => {
             {hourly24.map((hour, i) => (
               <div key={i} className={styles.hourBlock}>
                 <span className={styles.hourTime}>{hour.time}</span>
-                {/* Обертка для иконки и вероятности осадков (выравнивает высоту) */}
+
                 <div className={styles.hourIconWrapper}>
                   {getWeatherProps(hour.code).icon}
                   {hour.precipProb > 0 && (
@@ -499,9 +486,7 @@ const FullModal = () => {
           </div>
         </div>
 
-        {/* НОВАЯ РАСКЛАДКА НА ДЕСКТОПЕ: ДВЕ КОЛОНКИ */}
         <div className={styles.bottomLayout}>
-          {/* ЛЕВАЯ КОЛОНКА (10 ДНЕЙ) */}
           {!isAiMode && (
             <div
               className={`${styles.glassPanel} ${styles.dailyPanel}`}
@@ -546,7 +531,6 @@ const FullModal = () => {
             </div>
           )}
 
-          {/* ПРАВАЯ КОЛОНКА (СЕТКА ВИДЖЕТОВ) */}
           <div
             className={styles.widgetsGrid}
             onClick={(e) => e.stopPropagation()}

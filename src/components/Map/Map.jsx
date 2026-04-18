@@ -55,7 +55,7 @@ const Map = () => {
         {geographies.map((geo, index) => {
           const regionName = geo.properties.name || geo.properties.NAME_1;
           const isSelected =
-            selectedRegion && selectedRegion.name === regionName; // Проверка
+            selectedRegion && selectedRegion.name === regionName;
 
           return (
             <path
