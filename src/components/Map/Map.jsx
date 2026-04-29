@@ -33,15 +33,15 @@ const Map = () => {
   const handleRegionClick = (geo, e) => {
     e.stopPropagation();
     const [lon, lat] = geoCentroid(geo);
-    const [x, y] = projection([lon, lat]);
 
+    // Карта просто передает данные в Redux. Всю работу сделает BriefWidget.
     dispatch(
       setRegion({
         name: geo.properties.name || geo.properties.NAME_1,
         lat,
         lon,
-        xPercent: (x / VIEWBOX_WIDTH) * 100,
-        yPercent: (y / VIEWBOX_HEIGHT) * 100,
+        xPercent: (projection([lon, lat])[0] / VIEWBOX_WIDTH) * 100,
+        yPercent: (projection([lon, lat])[1] / VIEWBOX_HEIGHT) * 100,
       }),
     );
   };
@@ -53,10 +53,10 @@ const Map = () => {
         className={styles.svgContainer}
       >
         {geographies.map((geo, index) => {
-          const regionName = geo.properties.name || geo.properties.NAME_1;
           const isSelected =
-            selectedRegion && selectedRegion.name === regionName;
-
+            selectedRegion &&
+            selectedRegion.name ===
+              (geo.properties.name || geo.properties.NAME_1);
           return (
             <path
               key={index}

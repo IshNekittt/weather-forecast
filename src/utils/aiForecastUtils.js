@@ -43,8 +43,6 @@ const predictParam = (dataPoints, futureX, min = -100, max = 10000) => {
 };
 
 export const generateLocalForecast = async (apiData, lat, lon) => {
-  // ТАЙМАУТ ВИДАЛЕНО! Розрахунок відбувається миттєво.
-
   const { hourly } = apiData;
   const now = new Date();
   now.setMinutes(0, 0, 0);

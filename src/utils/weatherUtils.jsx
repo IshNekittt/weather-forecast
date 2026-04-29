@@ -63,3 +63,51 @@ export const capitalize = (str) => {
   if (!str) return "";
   return str.charAt(0).toUpperCase() + str.slice(1);
 };
+
+export const getBackgroundVideoName = (weatherCode, windSpeedKmh, dateStr) => {
+  const codeMap = {
+    0: "Clear",
+    1: "Mainly_Clear",
+    2: "Partly_Cloudy",
+    3: "Overcast",
+    45: "Fog",
+    48: "Rime_Fog",
+    51: "Drizzle",
+    53: "Drizzle",
+    55: "Drizzle",
+    56: "Drizzle",
+    57: "Drizzle",
+    61: "Light_Rain",
+    80: "Light_Rain",
+    63: "Rain",
+    81: "Rain",
+    65: "Heavy_Rain",
+    82: "Heavy_Rain",
+    71: "Light_Snow",
+    85: "Light_Snow",
+    73: "Snow",
+    86: "Snow",
+    75: "Heavy_Snow",
+    77: "Heavy_Snow",
+    95: "Thunderstorm",
+    96: "Thunderstorm",
+    99: "Thunderstorm",
+  };
+
+  const condition = codeMap[weatherCode] || "Clear";
+
+  const hour = new Date(dateStr).getHours();
+  let timeOfDay = "Night";
+
+  if (hour >= 6 && hour < 12) {
+    timeOfDay = "Morning";
+  } else if (hour >= 12 && hour < 18) {
+    timeOfDay = "Day"; // 12:00 - 17:59
+  } else if (hour >= 18 && hour < 24) {
+    timeOfDay = "Evening";
+  }
+
+  const wind = windSpeedKmh >= 18 ? "Wind" : "No_Wind";
+
+  return `${condition}_${timeOfDay}_${wind}`;
+};

@@ -32,6 +32,7 @@
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
   position: relative;
   text-align: center;
+  overflow: hidden;
 }
 
 /* МАГИЯ УГОЛКА: Треугольник, указывающий на область */
@@ -45,6 +46,19 @@
   border-style: solid;
   /* Цвет должен совпадать с фоном карточки (примерно) */
   border-color: rgba(15, 15, 15, 0.7) transparent transparent transparent;
+}
+
+.cardVideo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+
+  object-fit: cover;
+  object-position: center;
+  z-index: -1;
+  opacity: 0.8;
 }
 
 .closeBtn {

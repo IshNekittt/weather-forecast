@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useSelector, useDispatch } from "react-redux";
 import {
   clearRegion,
@@ -10,6 +10,7 @@ import {
   getWeatherProps,
   getNext24Hours,
   capitalize,
+  getBackgroundVideoName,
 } from "../../utils/weatherUtils";
 import { generateLocalForecast } from "../../utils/aiForecastUtils";
 import {
@@ -35,8 +36,19 @@ const FullModal = () => {
   const { selectedRegion, isFullModalOpen, isAiMode, aiCalculations } =
     useSelector((state) => state.app);
 
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
   const [metricModal, setMetricModal] = useState(null);
+
+  const [videoSrc, setVideoSrc] = useState("");
+  const prevRegionRef = React.useRef(selectedRegion?.name);
+
+  if (selectedRegion?.name !== prevRegionRef.current) {
+    prevRegionRef.current = selectedRegion?.name;
+
+    if (isVideoReady) setIsVideoReady(false);
+    if (videoSrc !== "") setVideoSrc("");
+  }
 
   const { data: apiData } = useGetWeatherQuery(
     selectedRegion
@@ -45,42 +57,63 @@ const FullModal = () => {
     { skip: !selectedRegion },
   );
 
+  const baseUrl = import.meta.env.VITE_VIDEO_BASE_URL;
+  const targetUrl = apiData
+    ? `${baseUrl}${getBackgroundVideoName(apiData.current.weather_code, apiData.current.wind_speed_10m, apiData.current.time || new Date().toISOString())}.mp4`
+    : "Clear_Day_No_Wind";
+
+  const fallbackUrl = `${baseUrl}Clear_Morning_No_Wind.mp4`;
+
+  if (isFullModalOpen && videoSrc !== targetUrl && targetUrl) {
+    setVideoSrc(targetUrl);
+  }
+
+  useEffect(() => {
+    if (isFullModalOpen && !isVideoReady && videoSrc) {
+      toast.loading("Завантаження фону...", { id: "fm-loader" });
+    } else {
+      toast.dismiss("fm-loader");
+    }
+    return () => toast.dismiss("fm-loader");
+  }, [isFullModalOpen, isVideoReady, videoSrc]);
+
+  if (!isFullModalOpen || !apiData) return null;
+
+  const handleVideoSuccess = () => setIsVideoReady(true);
+
+  const handleVideoError = () => {
+    if (videoSrc !== fallbackUrl) {
+      setVideoSrc(fallbackUrl);
+    } else {
+      setVideoSrc("");
+      setIsVideoReady(true);
+    }
+  };
+
   const handleAiToggle = async (e) => {
     e.stopPropagation();
-
     if (isAiMode) {
       dispatch(toggleAiMode());
-      toast.success("Повернуто до даних агрегатора");
       return;
     }
-
     const cachedCalc = aiCalculations[selectedRegion.name];
-    const isCacheValid =
-      cachedCalc && Date.now() - cachedCalc.timestamp < 3600000;
-
-    if (isCacheValid) {
+    if (cachedCalc && Date.now() - cachedCalc.timestamp < 3600000) {
       dispatch(toggleAiMode());
-      toast.success("Завантажено локальний AI прогноз");
     } else {
       const calcPromise = generateLocalForecast(
         apiData,
         selectedRegion.lat,
         selectedRegion.lon,
       );
-
       toast.promise(calcPromise, {
-        loading: "Математичний розрахунок прогнозу...",
-        success: "Локальний прогноз побудовано!",
-        error: "Помилка розрахунку",
+        loading: "Розрахунок...",
+        success: "AI прогноз готовий!",
+        error: "Помилка",
       });
-
       try {
-        const calculatedData = await calcPromise;
+        const result = await calcPromise;
         dispatch(
-          setAiCalculation({
-            regionName: selectedRegion.name,
-            data: calculatedData,
-          }),
+          setAiCalculation({ regionName: selectedRegion.name, data: result }),
         );
         dispatch(toggleAiMode());
       } catch (err) {
@@ -89,54 +122,53 @@ const FullModal = () => {
     }
   };
 
-  if (!isFullModalOpen || !apiData) return null;
-
   const displayData =
     isAiMode && aiCalculations[selectedRegion.name]
       ? aiCalculations[selectedRegion.name].data
       : apiData;
-
   const { current, daily, hourly } = displayData;
   const currentProps = getWeatherProps(current.weather_code);
   const hourly24 = getNext24Hours(hourly);
 
   const todayStr = new Date().toISOString().split("T")[0];
-  let todayIdx = daily.time.findIndex((t) => t.startsWith(todayStr));
-  if (todayIdx === -1) todayIdx = 0;
+  let todayIdxInApi = apiData.daily.time.findIndex((t) =>
+    t.startsWith(todayStr),
+  );
+  if (todayIdxInApi === -1) todayIdxInApi = 0;
+  const activeIdx = isAiMode ? 0 : todayIdxInApi;
 
   const futureDaysIndices = [];
-  for (let i = todayIdx; i < daily.time.length; i++) {
-    futureDaysIndices.push(i);
+  if (!isAiMode) {
+    for (let i = todayIdxInApi; i < apiData.daily.time.length; i++)
+      futureDaysIndices.push(i);
   }
 
   const uvPercent = Math.min((current.uv_index / 11) * 100, 100);
-
-  const minP = 970;
-  const maxP = 1050;
-  const currentP = Math.max(minP, Math.min(maxP, current.pressure_msl));
-  const pressurePercent = (currentP - minP) / (maxP - minP);
-  const pressureRotation = -135 + pressurePercent * 270;
-
-  const sunrise = new Date(daily.sunrise[todayIdx]);
-  const sunset = new Date(daily.sunset[todayIdx]);
-  const now = new Date();
-  let daylightPercent = (now - sunrise) / (sunset - sunrise);
-  daylightPercent = Math.max(0, Math.min(1, daylightPercent));
+  const pressureRotation =
+    -135 +
+    ((Math.max(970, Math.min(1050, current.pressure_msl)) - 970) /
+      (1050 - 970)) *
+      270;
+  const sunriseDate = new Date(daily.sunrise[activeIdx]);
+  const sunsetDate = new Date(daily.sunset[activeIdx]);
+  const daylightPercent = Math.max(
+    0,
+    Math.min(1, (new Date() - sunriseDate) / (sunsetDate - sunriseDate)),
+  );
   const sunRotation = -90 + daylightPercent * 180;
-
   const timeOpts = { hour: "2-digit", minute: "2-digit" };
-  const sunriseStr = sunrise.toLocaleTimeString("uk-UA", timeOpts);
-  const sunsetStr = sunset.toLocaleTimeString("uk-UA", timeOpts);
+  const sunriseStr = sunriseDate.toLocaleTimeString("uk-UA", timeOpts);
+  const sunsetStr = sunsetDate.toLocaleTimeString("uk-UA", timeOpts);
 
+  // --- ВНУТРЕННИЕ МОДАЛКИ ---
   const renderHourlyForSelectedDay = () => {
     if (selectedDay === null) return null;
-    const startIndex = selectedDay * 24;
+    const startIndex = isAiMode ? 0 : selectedDay * 24;
     const dayHours = [];
     for (let i = startIndex; i < startIndex + 24; i++) {
       if (!hourly.time[i]) break;
-      const date = new Date(hourly.time[i]);
       dayHours.push({
-        time: date.toLocaleTimeString("uk-UA", timeOpts),
+        time: new Date(hourly.time[i]).toLocaleTimeString("uk-UA", timeOpts),
         temp: Math.round(hourly.temperature_2m[i]),
         code: hourly.weather_code[i],
         precipProb: hourly.precipitation_probability
@@ -145,16 +177,17 @@ const FullModal = () => {
       });
     }
     const dayName =
-      selectedDay === 0
+      selectedDay === todayIdxInApi
         ? "Сьогодні"
         : capitalize(
-            new Date(daily.time[selectedDay]).toLocaleDateString("uk-UA", {
+            new Date(
+              displayData.daily.time[isAiMode ? 0 : selectedDay],
+            ).toLocaleDateString("uk-UA", {
               weekday: "long",
               day: "numeric",
               month: "long",
             }),
           );
-
     return (
       <div
         className={styles.innerModalOverlay}
@@ -181,7 +214,6 @@ const FullModal = () => {
             {dayHours.map((h, idx) => (
               <div key={idx} className={styles.innerHourRow}>
                 <span style={{ flex: 1, textAlign: "left" }}>{h.time}</span>
-
                 <div
                   style={{
                     display: "flex",
@@ -203,16 +235,12 @@ const FullModal = () => {
                   </div>
                   <div style={{ width: "30px", textAlign: "left" }}>
                     {h.precipProb > 0 && (
-                      <span
-                        className={styles.precipProbText}
-                        style={{ margin: 0 }}
-                      >
+                      <span className={styles.precipProbText}>
                         {h.precipProb}%
                       </span>
                     )}
                   </div>
                 </div>
-
                 <span
                   style={{ flex: 1, textAlign: "right", fontWeight: "bold" }}
                 >
@@ -228,64 +256,49 @@ const FullModal = () => {
 
   const renderMetricModal = () => {
     if (!metricModal) return null;
-
     let list = [];
     if (metricModal.isDaily) {
-      list = futureDaysIndices.map((dIdx, loopIdx) => {
-        const t = daily.time[dIdx];
-        const dayName =
-          loopIdx === 0
+      const indices = isAiMode ? [0] : futureDaysIndices;
+      list = indices.map((dIdx) => ({
+        label:
+          isAiMode || dIdx === todayIdxInApi
             ? "Сьогодні"
             : capitalize(
-                new Date(t).toLocaleDateString("uk-UA", {
+                new Date(daily.time[dIdx]).toLocaleDateString("uk-UA", {
                   weekday: "short",
                   day: "numeric",
                   month: "long",
                 }),
-              );
-
-        let valStr = "";
-        if (metricModal.key === "sun") {
-          valStr = `Схід ${new Date(daily.sunrise[dIdx]).toLocaleTimeString(
-            "uk-UA",
-            timeOpts,
-          )} • Захід ${new Date(daily.sunset[dIdx]).toLocaleTimeString(
-            "uk-UA",
-            timeOpts,
-          )}`;
-        } else {
-          valStr = `${Math.round(daily[metricModal.key][dIdx])} ${metricModal.unit}`;
-        }
-        return { label: dayName, value: valStr };
-      });
+              ),
+        value:
+          metricModal.key === "sun"
+            ? `Схід ${new Date(daily.sunrise[dIdx]).toLocaleTimeString("uk-UA", timeOpts)} • Захід ${new Date(daily.sunset[dIdx]).toLocaleTimeString("uk-UA", timeOpts)}`
+            : `${Math.round(daily[metricModal.key][dIdx])} ${metricModal.unit}`,
+      }));
     } else {
       list = hourly24.map((h) => {
         let val = hourly[metricModal.key]
           ? hourly[metricModal.key][h.index]
           : 0;
         let extra = null;
-
-        if (metricModal.key === "visibility") {
-          val = Math.round(val / 1000);
-        } else if (
-          metricModal.key === "pressure_msl" ||
-          metricModal.key === "relative_humidity_2m" ||
-          metricModal.key === "temperature_2m_mean" ||
-          metricModal.key === "temperature_2m"
-        ) {
+        if (metricModal.key === "visibility") val = Math.round(val / 1000);
+        else if (
+          [
+            "pressure_msl",
+            "relative_humidity_2m",
+            "temperature_2m_mean",
+            "temperature_2m",
+          ].includes(metricModal.key)
+        )
           val = Math.round(val);
-        } else if (metricModal.key === "uv_index") {
-          val = Number(val).toFixed(2);
-        } else if (metricModal.key === "precipitation") {
+        else if (metricModal.key === "uv_index") val = Number(val).toFixed(2);
+        else if (metricModal.key === "precipitation")
           val = Number(val).toFixed(1);
-        }
-
         if (metricModal.key === "wind_speed_10m") {
           val = (val / 3.6).toFixed(1);
           const dir = hourly.wind_direction_10m
             ? Math.round(hourly.wind_direction_10m[h.index])
             : 0;
-
           extra = (
             <div
               style={{
@@ -343,11 +356,9 @@ const FullModal = () => {
             </div>
           );
         }
-
         return { label: h.time, value: `${val} ${metricModal.unit}`, extra };
       });
     }
-
     return (
       <div
         className={styles.innerModalOverlay}
@@ -374,16 +385,13 @@ const FullModal = () => {
             {list.map((item, idx) => (
               <div key={idx} className={styles.innerHourRow}>
                 <span style={{ flex: 1, textAlign: "left" }}>{item.label}</span>
-
-                {item.extra && item.extra}
-
+                {item.extra ? (
+                  item.extra
+                ) : (
+                  <div style={{ width: "75px" }}></div>
+                )}
                 <span
-                  style={{
-                    flex: item.extra ? 1 : 1.5,
-                    textAlign: "right",
-                    fontWeight: "bold",
-                    lineHeight: 1.4,
-                  }}
+                  style={{ flex: 1, textAlign: "right", fontWeight: "bold" }}
                 >
                   {item.value}
                 </span>
@@ -399,15 +407,26 @@ const FullModal = () => {
     <div
       className={styles.modalOverlay}
       onClick={() => dispatch(clearRegion())}
+      // ПОКАЗЫВАЕМ ТОЛЬКО ПОСЛЕ ЗАГРУЗКИ ВИДЕО (ИЛИ ЗАГЛУШКИ)
+      style={{
+        opacity: isVideoReady ? 1 : 0,
+        visibility: isVideoReady ? "visible" : "hidden",
+        transition: "opacity 0.3s ease",
+      }}
     >
-      {/* <video
-        className={styles.bgVideo}
-        autoPlay
-        loop
-        muted
-        playsInline
-        src="https://res.cloudinary.com/demo/video/upload/q_auto,f_auto/rooster.mp4"
-      /> */}
+      {videoSrc && (
+        <video
+          key={videoSrc}
+          className={styles.bgVideo}
+          autoPlay
+          loop
+          muted
+          playsInline
+          src={videoSrc}
+          onCanPlayThrough={handleVideoSuccess}
+          onError={handleVideoError}
+        />
+      )}
 
       <button
         className={styles.closeBtn}
@@ -418,14 +437,12 @@ const FullModal = () => {
             : "rgba(255, 255, 255, 0.2)",
         }}
         onClick={handleAiToggle}
-        title="Локальний розрахунок прогнозу"
       >
         <Sparkles
           size={20}
           color={isAiMode ? "white" : "rgba(255,255,255,0.7)"}
         />
       </button>
-
       <button
         className={styles.closeBtn}
         onClick={() => dispatch(clearRegion())}
@@ -458,8 +475,8 @@ const FullModal = () => {
           </div>
           <div className={styles.condition}>{currentProps.text}</div>
           <div className={styles.highLow}>
-            Макс.: {Math.round(daily.temperature_2m_max[todayIdx])}°, Мін.:{" "}
-            {Math.round(daily.temperature_2m_min[todayIdx])}°
+            Макс.: {Math.round(daily.temperature_2m_max[activeIdx])}°, Мін.:{" "}
+            {Math.round(daily.temperature_2m_min[activeIdx])}°
           </div>
         </div>
 
@@ -471,7 +488,6 @@ const FullModal = () => {
             {hourly24.map((hour, i) => (
               <div key={i} className={styles.hourBlock}>
                 <span className={styles.hourTime}>{hour.time}</span>
-
                 <div className={styles.hourIconWrapper}>
                   {getWeatherProps(hour.code).icon}
                   {hour.precipProb > 0 && (
@@ -496,37 +512,35 @@ const FullModal = () => {
                 <CalendarDays size={14} /> Прогноз на 10 днів
               </div>
               <div className={styles.dailyList}>
-                {futureDaysIndices.map((dIdx, loopIdx) => {
-                  const dateString = daily.time[dIdx];
-                  const dayName =
-                    loopIdx === 0
-                      ? "Сьогодні"
-                      : capitalize(
-                          new Date(dateString).toLocaleDateString("uk-UA", {
-                            weekday: "short",
-                          }),
-                        );
-                  return (
-                    <div
-                      key={dIdx}
-                      className={styles.dailyRow}
-                      onClick={() => setSelectedDay(dIdx)}
-                    >
-                      <span className={styles.dayName}>{dayName}</span>
-                      <span className={styles.dayIcon}>
-                        {getWeatherProps(daily.weather_code[dIdx]).icon}
+                {futureDaysIndices.map((dIdx, loopIdx) => (
+                  <div
+                    key={dIdx}
+                    className={styles.dailyRow}
+                    onClick={() => setSelectedDay(dIdx)}
+                  >
+                    <span className={styles.dayName}>
+                      {loopIdx === 0
+                        ? "Сьогодні"
+                        : capitalize(
+                            new Date(daily.time[dIdx]).toLocaleDateString(
+                              "uk-UA",
+                              { weekday: "short" },
+                            ),
+                          )}
+                    </span>
+                    <span className={styles.dayIcon}>
+                      {getWeatherProps(daily.weather_code[dIdx]).icon}
+                    </span>
+                    <div className={styles.dayTemps}>
+                      <span className={styles.tempMin}>
+                        від {Math.round(daily.temperature_2m_min[dIdx])}°
                       </span>
-                      <div className={styles.dayTemps}>
-                        <span className={styles.tempMin}>
-                          від {Math.round(daily.temperature_2m_min[dIdx])}°
-                        </span>
-                        <span className={styles.tempMax}>
-                          до {Math.round(daily.temperature_2m_max[dIdx])}°
-                        </span>
-                      </div>
+                      <span className={styles.tempMax}>
+                        до {Math.round(daily.temperature_2m_max[dIdx])}°
+                      </span>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -580,8 +594,7 @@ const FullModal = () => {
                 <span>Захід {sunsetStr}</span>
               </div>
             </div>
-
-            {/* ОСАДКИ */}
+            {/* ОСТАЛЬНЫЕ ВИДЖЕТЫ */}
             <div
               className={`${styles.glassPanel} ${styles.squareWidget} ${styles.clickablePanel}`}
               onClick={() =>
@@ -600,11 +613,9 @@ const FullModal = () => {
                 <span style={{ fontSize: "1rem" }}>мм</span>
               </div>
               <div className={styles.widgetDesc}>
-                За добу: {daily.precipitation_sum[todayIdx].toFixed(1)} мм
+                За добу: {daily.precipitation_sum[activeIdx].toFixed(1)} мм
               </div>
             </div>
-
-            {/* СРЕДНЯЯ ТЕМПЕРАТУРА */}
             <div
               className={`${styles.glassPanel} ${styles.squareWidget} ${styles.clickablePanel}`}
               onClick={() =>
@@ -620,12 +631,10 @@ const FullModal = () => {
                 <ThermometerSun size={14} /> СЕРЕДНЯ ТЕМП.
               </div>
               <div className={styles.widgetValue}>
-                {Math.round(daily.temperature_2m_mean[todayIdx])}°
+                {Math.round(daily.temperature_2m_mean[activeIdx])}°
               </div>
               <div className={styles.widgetDesc}>В середньому за добу</div>
             </div>
-
-            {/* УФ-ИНДЕКС */}
             <div
               className={`${styles.glassPanel} ${styles.squareWidget} ${styles.clickablePanel}`}
               onClick={() =>
@@ -652,8 +661,6 @@ const FullModal = () => {
                 ></div>
               </div>
             </div>
-
-            {/* ВЕТЕР */}
             <div
               className={`${styles.glassPanel} ${styles.squareWidget} ${styles.clickablePanel}`}
               onClick={() =>
@@ -712,11 +719,9 @@ const FullModal = () => {
                 style={{ textAlign: "center" }}
               >
                 {(current.wind_speed_10m / 3.6).toFixed(1)} м/с •{" "}
-                {current.wind_direction_10m}°
+                {Math.round(current.wind_direction_10m)}°
               </div>
             </div>
-
-            {/* ВЛАЖНОСТЬ */}
             <div
               className={`${styles.glassPanel} ${styles.squareWidget} ${styles.clickablePanel}`}
               onClick={() =>
@@ -731,14 +736,12 @@ const FullModal = () => {
                 <Droplets size={14} /> ВОЛОГІСТЬ
               </div>
               <div className={styles.widgetValue}>
-                {current.relative_humidity_2m}%
+                {Math.round(current.relative_humidity_2m)}%
               </div>
               <div className={styles.widgetDesc}>
                 Точка роси: {Math.round(current.dew_point_2m)}°
               </div>
             </div>
-
-            {/* ВИДИМОСТЬ */}
             <div
               className={`${styles.glassPanel} ${styles.squareWidget} ${styles.clickablePanel}`}
               onClick={() =>
@@ -753,13 +756,11 @@ const FullModal = () => {
                 <Eye size={14} /> ВИДИМІСТЬ
               </div>
               <div className={styles.widgetValue}>
-                {(current.visibility / 1000).toFixed(0)}{" "}
+                {Math.round(current.visibility / 1000)}{" "}
                 <span style={{ fontSize: "1rem" }}>км</span>
               </div>
               <div className={styles.widgetDesc}>Чисте небо</div>
             </div>
-
-            {/* ДАВЛЕНИЕ */}
             <div
               className={`${styles.glassPanel} ${styles.squareWidget} ${styles.pressureWidget} ${styles.clickablePanel}`}
               onClick={() =>
@@ -814,7 +815,6 @@ const FullModal = () => {
           </div>
         </div>
       </div>
-
       {renderHourlyForSelectedDay()}
       {renderMetricModal()}
     </div>
