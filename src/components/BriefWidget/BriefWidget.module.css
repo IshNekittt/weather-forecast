@@ -8,14 +8,14 @@
 }
 
 .popIn {
-  opacity: 1;
-  pointer-events: auto;
+  opacity: 1 !important;
+  pointer-events: auto !important;
   animation: popInAnim 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
 }
 
 .popOut {
-  opacity: 1;
-  pointer-events: none;
+  opacity: 1 !important;
+  pointer-events: none !important;
   animation: popOutAnim 0.25s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
 }
 
@@ -37,15 +37,15 @@
   }
   to {
     opacity: 0;
-    transform: translate(-50%, -85%) scale(0.3);
+    transform: translate(-50%, -85%) scale(0.2);
   }
 }
 
 .card {
   width: max-content;
-  min-width: 240px;
+  min-width: 250px;
   min-height: 160px;
-  padding: 15px 22px;
+  padding: 18px 24px;
   border-radius: 24px;
   position: relative;
   text-align: center;
@@ -54,20 +54,15 @@
   flex-direction: column;
   justify-content: center;
 
-  /* ПРАВКА: Використовуємо світліший тинт.
-     Це не зробить віджет білим, але змусить кольори відео сяяти. */
-  background: rgba(15, 10, 30, 0.75);
+  /* Плотный матовый фон для идеальной читаемости */
+  background: rgba(20, 15, 40, 0.78);
+  backdrop-filter: blur(40px) saturate(1.5) brightness(1.1);
+  -webkit-backdrop-filter: blur(40px) saturate(1.5) brightness(1.1);
 
-  /* ПРАВКА: Потужне підсвічування через backdrop-filter */
-  backdrop-filter: blur(40px) saturate(1.4);
-  -webkit-backdrop-filter: blur(40px) saturate(1.4);
-
-  /* Тонкая рамка для акцента границ */
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 
-/* ТОЙ САМИЙ ХВОСТИК (ТРИКУТНИК) */
 .card::after {
   content: "";
   position: absolute;
@@ -76,8 +71,7 @@
   transform: translateX(-50%);
   border-width: 10px 10px 0;
   border-style: solid;
-  /* Колір має збігатися з фоном картки */
-  border-color: rgba(15, 10, 30, 0.75) transparent transparent transparent;
+  border-color: rgba(20, 15, 40, 0.78) transparent transparent transparent;
 }
 
 .cardVideo {
@@ -88,69 +82,55 @@
   height: 100%;
   object-fit: cover;
   z-index: -1;
-  opacity: 1;
-  filter: brightness(1.15) contrast(1.1);
 }
 
 .closeBtn {
   position: absolute;
-  top: 10px;
+  top: 12px;
   right: 12px;
-  background: none;
+  background: rgba(255, 255, 255, 0.1);
   border: none;
-  color: rgba(255, 255, 255, 0.6);
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  color: white;
   cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   z-index: 10;
 }
 
 .header {
-  font-size: 1.1rem;
+  font-size: 1.15rem;
   font-weight: 600;
-  margin-bottom: 8px;
+  margin-bottom: 6px;
+  color: white;
 }
 
 .mainTemp {
-  font-size: 3rem;
+  font-size: 3.2rem;
   font-weight: 700;
   line-height: 1;
   margin-bottom: 4px;
 }
 
 .feelsLike {
-  font-size: 0.85rem;
+  font-size: 0.9rem;
   opacity: 0.8;
-  margin-bottom: 12px;
+  margin-bottom: 14px;
 }
 
 .detailsGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 10px;
   text-align: left;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 }
 
 .detailItem {
   display: flex;
   align-items: center;
-  gap: 6px;
-}
-
-.loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 100px;
-  font-size: 1rem;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0%,
-  100% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
-  }
+  gap: 8px;
 }
