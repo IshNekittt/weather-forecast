@@ -5,7 +5,7 @@
   height: 100vh;
   position: relative;
   overflow: hidden;
-  background-color: #12032b; /* Глибока база */
+  background-color: #0f0225; /* Глибока база */
 }
 
 .auroraBackground {
@@ -160,11 +160,9 @@
   padding: 1rem;
   width: 100%;
   height: 100%;
-
-  /* Робимо оверлей світлішим, щоб він не "з'їдав" колір на Vercel */
-  background: rgba(255, 255, 255, 0.02);
-  backdrop-filter: blur(40px) brightness(1.05);
-  -webkit-backdrop-filter: blur(40px) brightness(1.05);
+  background: transparent;
+  backdrop-filter: blur(40px) brightness(1.1);
+  -webkit-backdrop-filter: blur(40px) brightness(1.1);
   overflow: hidden;
 }
 

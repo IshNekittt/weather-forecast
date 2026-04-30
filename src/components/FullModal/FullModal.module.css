@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: #000;
+  background: rgba(0, 0, 0, 0.2);
   color: white;
   overflow-y: auto;
   overflow-x: hidden;
@@ -28,7 +28,8 @@
   height: 100%;
   object-fit: cover;
   z-index: -1;
-  opacity: 0.8;
+  opacity: 1;
+  filter: brightness(1.1);
 }
 
 .closeBtn {
@@ -107,7 +108,11 @@
   border-radius: 20px;
   padding: 15px 20px;
   border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  background: rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(30px) brightness(1.15) saturate(1.4);
+  -webkit-backdrop-filter: blur(30px) brightness(1.15) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 20px;
 }
 
 .panelTitle {
