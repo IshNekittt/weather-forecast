@@ -21,6 +21,7 @@
 }
 
 .card {
+  pointer-events: auto;
   width: max-content;
   min-width: 240px;
   background: rgba(15, 15, 15, 0.7);

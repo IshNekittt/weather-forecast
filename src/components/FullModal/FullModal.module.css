@@ -474,3 +474,34 @@
   flex-direction: column;
   flex: 1;
 }
+
+/* СТИЛІ ДЛЯ ПАНЕЛІ ОПИСУ AI */
+.aiDescContent {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 10px 0;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  opacity: 0.9;
+  flex: 1;
+}
+
+.aiDescBlock {
+  background: rgba(255, 255, 255, 0.03);
+  padding: 15px;
+  border-radius: 12px;
+  border-left: 3px solid #aa3bff;
+}
+
+.aiDescBlock strong {
+  display: block;
+  color: #c084fc;
+  margin-bottom: 5px;
+  font-size: 1rem;
+}
+
+.aiDescBlock p {
+  margin: 0;
+  opacity: 0.85;
+}

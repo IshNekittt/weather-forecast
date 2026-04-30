@@ -4,25 +4,191 @@
   width: 100vw;
   height: 100vh;
   position: relative;
+  overflow: hidden;
+  background-color: #1e053d;
 }
 
-.backgroundVideo {
+.auroraBackground {
   position: absolute;
   inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  z-index: -1;
+  z-index: 0;
+  overflow: hidden;
 }
 
+.meshBand {
+  position: absolute;
+  filter: blur(160px);
+  /* will-change підказує браузеру виділити ресурси під плавну анімацію */
+  will-change: transform, opacity, border-radius;
+}
+
+/* ФІОЛЕТОВІ ПОТОКИ (Дуже повільні: 50-60 секунд) */
+.bandIndigo {
+  width: 140vw;
+  height: 90vh;
+  background: #2c2458;
+  top: -10%;
+  left: -20vw;
+  opacity: 0.6;
+  animation: slowMorph 55s infinite ease-in-out;
+}
+
+.bandElectric {
+  width: 120vw;
+  height: 50vh;
+  background: #a855f7;
+  top: 30%;
+  left: -10vw;
+  opacity: 0.25;
+  animation: slowMorph 45s infinite ease-in-out reverse;
+}
+
+/* ПОМАРАНЧЕВА ПЛАЗМА (Сповільнена до 40 секунд) */
+.bandOrangeA,
+.bandOrangeB {
+  width: 100vw;
+  height: 30vh;
+  position: absolute;
+  filter: blur(160px);
+  opacity: 0;
+  top: 50%;
+  left: 50%;
+  margin-left: -50vw;
+  margin-top: -15vh;
+  mix-blend-mode: normal;
+}
+
+.bandOrangeA {
+  background: radial-gradient(circle at center, #ff5e00 0%, transparent 70%);
+  /* Збільшено час до 40с для плавності */
+  animation: smoothChaosA 40s infinite ease-in-out;
+}
+
+.bandOrangeB {
+  background: radial-gradient(circle at center, #f7cd57 0%, transparent 70%);
+  animation: smoothChaosB 40s infinite ease-in-out;
+}
+
+.bandDeep {
+  width: 100vw;
+  height: 100vh;
+  background: #1e053d;
+  top: 50%;
+  left: 50%;
+  margin-left: -50vw;
+  margin-top: -50vh;
+  filter: blur(130px);
+  opacity: 0.7;
+  animation: shadowWander 60s infinite linear;
+}
+
+/* === ПЛАВНІ АНІМАЦІЇ === */
+
+@keyframes smoothChaosA {
+  0% {
+    transform: translate(-70vw, 30vh) rotate(-20deg) scale(0.4, 0.2);
+    opacity: 0;
+  }
+
+  /* 1. Плавний вхід у центр */
+  30% {
+    transform: translate(0, 0) rotate(0deg) scale(0.8, 0.8);
+    opacity: 0.2; /* Пригасання в центрі */
+    border-radius: 50%;
+  }
+
+  /* 2. Повільне спливання вгору */
+  50% {
+    transform: translate(5vw, -20vh) rotate(10deg) scale(1.3, 0.4);
+    opacity: 0.4;
+    border-radius: 40% 60% 30% 70%;
+  }
+
+  /* 3. М'яке занурення вправо вниз */
+  75% {
+    transform: translate(35vw, 25vh) rotate(30deg) scale(0.6, 1.2);
+    opacity: 0.3;
+    border-radius: 70% 30% 50% 50%;
+  }
+
+  /* 4. Повільне розчинення */
+  100% {
+    transform: translate(70vw, -30vh) rotate(60deg) scale(0.2, 0.2);
+    opacity: 0;
+  }
+}
+
+@keyframes smoothChaosB {
+  0% {
+    transform: translate(-70vw, 30vh) rotate(-20deg) scale(0.4, 0.2);
+    opacity: 0;
+  }
+
+  30% {
+    transform: translate(0, 0) rotate(0deg) scale(0.8, 0.8);
+    opacity: 0.2;
+  }
+
+  50% {
+    transform: translate(-10vw, -25vh) rotate(-5deg) scale(1.1, 0.5);
+    opacity: 0.4;
+  }
+
+  75% {
+    transform: translate(30vw, 30vh) rotate(20deg) scale(0.5, 1.4);
+    opacity: 0.3;
+  }
+
+  /* Розділення в інший бік */
+  100% {
+    transform: translate(-10vw, 80vh) rotate(-40deg) scale(0.2, 0.2);
+    opacity: 0;
+  }
+}
+
+@keyframes slowMorph {
+  0%,
+  100% {
+    border-radius: 50%;
+    transform: scale(1) rotate(0deg);
+  }
+  50% {
+    border-radius: 35% 65% 40% 60%;
+    transform: scale(1.05) rotate(180deg);
+  }
+}
+
+@keyframes shadowWander {
+  0% {
+    transform: rotate(0deg) translate(-10vw, -10vh);
+  }
+  100% {
+    transform: rotate(360deg) translate(-10vw, -10vh);
+  }
+}
+
+/* === СКЛЯНА ПАНЕЛЬ === */
 .contentOverlay {
+  position: relative;
+  z-index: 1;
   display: flex;
   flex-direction: column;
-  padding: 2rem;
   padding: 1rem;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.8);
-  backdrop-filter: blur(5px);
+  background: rgba(30, 5, 61, 0.12);
+  backdrop-filter: blur(45px); /* Більше розмиття для плавності */
+  -webkit-backdrop-filter: blur(45px);
   overflow: hidden;
+}
+
+/* Додай це в кінець файлу */
+.paused .meshBand,
+.paused .darkBreaker,
+.paused .bandIndigo,
+.paused .bandElectric,
+.paused .bandDeep,
+.paused .bandOrangeA,
+.paused .bandOrangeB {
+  animation-play-state: paused;
 }

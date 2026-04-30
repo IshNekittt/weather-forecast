@@ -36,19 +36,12 @@ const FullModal = () => {
   const { selectedRegion, isFullModalOpen, isAiMode, aiCalculations } =
     useSelector((state) => state.app);
 
-  const [isVideoReady, setIsVideoReady] = useState(false);
   const [selectedDay, setSelectedDay] = useState(null);
   const [metricModal, setMetricModal] = useState(null);
 
-  const [videoSrc, setVideoSrc] = useState("");
-  const prevRegionRef = React.useRef(selectedRegion?.name);
-
-  if (selectedRegion?.name !== prevRegionRef.current) {
-    prevRegionRef.current = selectedRegion?.name;
-
-    if (isVideoReady) setIsVideoReady(false);
-    if (videoSrc !== "") setVideoSrc("");
-  }
+  // Новий ідеальний підхід
+  const [loadedVideoUrl, setLoadedVideoUrl] = useState(null);
+  const [failedUrls, setFailedUrls] = useState(new Set());
 
   const { data: apiData } = useGetWeatherQuery(
     selectedRegion
@@ -58,47 +51,59 @@ const FullModal = () => {
   );
 
   const baseUrl = import.meta.env.VITE_VIDEO_BASE_URL;
-  const targetUrl = apiData
-    ? `${baseUrl}${getBackgroundVideoName(apiData.current.weather_code, apiData.current.wind_speed_10m, apiData.current.time || new Date().toISOString())}.mp4`
-    : "Clear_Day_No_Wind";
-
   const fallbackUrl = `${baseUrl}Clear_Morning_No_Wind.mp4`;
 
-  if (isFullModalOpen && videoSrc !== targetUrl && targetUrl) {
-    setVideoSrc(targetUrl);
+  // 1. Формуємо Derived State URL
+  let idealUrl = null;
+  if (apiData && isFullModalOpen) {
+    const timeStr = apiData.current.time || new Date().toISOString();
+    const videoName = getBackgroundVideoName(
+      apiData.current.weather_code,
+      apiData.current.wind_speed_10m,
+      timeStr,
+    );
+    idealUrl = `${baseUrl}${videoName}.mp4`;
   }
 
+  let currentVideoUrl = idealUrl;
+  if (failedUrls.has(idealUrl)) {
+    currentVideoUrl = fallbackUrl;
+  }
+  if (failedUrls.has(fallbackUrl)) {
+    currentVideoUrl = null;
+  }
+
+  // Модалка з'являється, якщо актуальне відео завантажилось (або якщо відео відсутнє взагалі)
+  const showModal = loadedVideoUrl === currentVideoUrl || !currentVideoUrl;
+
+  // 2. Лоадер чітко стежить за завантаженням (ніяких set-стейтів всередині!)
   useEffect(() => {
-    if (isFullModalOpen && !isVideoReady && videoSrc) {
+    // Якщо модалка відкрита, нам ПОТРІБНЕ відео, але воно ЩЕ НЕ завантажилось
+    if (
+      isFullModalOpen &&
+      currentVideoUrl &&
+      loadedVideoUrl !== currentVideoUrl
+    ) {
       toast.loading("Завантаження фону...", { id: "fm-loader" });
     } else {
       toast.dismiss("fm-loader");
     }
     return () => toast.dismiss("fm-loader");
-  }, [isFullModalOpen, isVideoReady, videoSrc]);
+  }, [isFullModalOpen, currentVideoUrl, loadedVideoUrl]);
 
   if (!isFullModalOpen || !apiData) return null;
-
-  const handleVideoSuccess = () => setIsVideoReady(true);
-
-  const handleVideoError = () => {
-    if (videoSrc !== fallbackUrl) {
-      setVideoSrc(fallbackUrl);
-    } else {
-      setVideoSrc("");
-      setIsVideoReady(true);
-    }
-  };
 
   const handleAiToggle = async (e) => {
     e.stopPropagation();
     if (isAiMode) {
       dispatch(toggleAiMode());
+      toast.success("Повернуто до даних агрегатора");
       return;
     }
     const cachedCalc = aiCalculations[selectedRegion.name];
     if (cachedCalc && Date.now() - cachedCalc.timestamp < 3600000) {
       dispatch(toggleAiMode());
+      toast.success("Завантажено локальний AI прогноз");
     } else {
       const calcPromise = generateLocalForecast(
         apiData,
@@ -106,9 +111,9 @@ const FullModal = () => {
         selectedRegion.lon,
       );
       toast.promise(calcPromise, {
-        loading: "Розрахунок...",
-        success: "AI прогноз готовий!",
-        error: "Помилка",
+        loading: "Математичний розрахунок...",
+        success: "AI прогноз побудовано!",
+        error: "Помилка розрахунку",
       });
       try {
         const result = await calcPromise;
@@ -256,49 +261,70 @@ const FullModal = () => {
 
   const renderMetricModal = () => {
     if (!metricModal) return null;
+
     let list = [];
     if (metricModal.isDaily) {
       const indices = isAiMode ? [0] : futureDaysIndices;
-      list = indices.map((dIdx) => ({
-        label:
-          isAiMode || dIdx === todayIdxInApi
+      list = indices.map((dIdx) => {
+        const t = daily.time[dIdx];
+        const dayName =
+          isAiMode || dIdx === activeIdx
             ? "Сьогодні"
             : capitalize(
-                new Date(daily.time[dIdx]).toLocaleDateString("uk-UA", {
+                new Date(t).toLocaleDateString("uk-UA", {
                   weekday: "short",
                   day: "numeric",
                   month: "long",
                 }),
-              ),
-        value:
-          metricModal.key === "sun"
-            ? `Схід ${new Date(daily.sunrise[dIdx]).toLocaleTimeString("uk-UA", timeOpts)} • Захід ${new Date(daily.sunset[dIdx]).toLocaleTimeString("uk-UA", timeOpts)}`
-            : `${Math.round(daily[metricModal.key][dIdx])} ${metricModal.unit}`,
-      }));
+              );
+
+        let valStr = "";
+        if (metricModal.key === "sun") {
+          const sr = new Date(daily.sunrise[dIdx]).toLocaleTimeString(
+            "uk-UA",
+            timeOpts,
+          );
+          const ss = new Date(daily.sunset[dIdx]).toLocaleTimeString(
+            "uk-UA",
+            timeOpts,
+          );
+          // Використовуємо нерозривний пробіл (\u00A0), щоб "Захід 20:39" ніколи не розривалося на два рядки
+          valStr = `Схід\u00A0${sr} • Захід\u00A0${ss}`;
+        } else {
+          valStr = `${Math.round(daily[metricModal.key][dIdx])} ${metricModal.unit}`;
+        }
+        return { label: dayName, value: valStr };
+      });
     } else {
       list = hourly24.map((h) => {
         let val = hourly[metricModal.key]
           ? hourly[metricModal.key][h.index]
           : 0;
         let extra = null;
-        if (metricModal.key === "visibility") val = Math.round(val / 1000);
-        else if (
+
+        if (metricModal.key === "visibility") {
+          val = Math.round(val / 1000);
+        } else if (
           [
             "pressure_msl",
             "relative_humidity_2m",
             "temperature_2m_mean",
             "temperature_2m",
           ].includes(metricModal.key)
-        )
+        ) {
           val = Math.round(val);
-        else if (metricModal.key === "uv_index") val = Number(val).toFixed(2);
-        else if (metricModal.key === "precipitation")
+        } else if (metricModal.key === "uv_index") {
+          val = Number(val).toFixed(2);
+        } else if (metricModal.key === "precipitation") {
           val = Number(val).toFixed(1);
+        }
+
         if (metricModal.key === "wind_speed_10m") {
           val = (val / 3.6).toFixed(1);
           const dir = hourly.wind_direction_10m
             ? Math.round(hourly.wind_direction_10m[h.index])
             : 0;
+
           extra = (
             <div
               style={{
@@ -356,9 +382,11 @@ const FullModal = () => {
             </div>
           );
         }
+
         return { label: h.time, value: `${val} ${metricModal.unit}`, extra };
       });
     }
+
     return (
       <div
         className={styles.innerModalOverlay}
@@ -383,15 +411,28 @@ const FullModal = () => {
           </div>
           <div className={styles.innerModalScroll}>
             {list.map((item, idx) => (
-              <div key={idx} className={styles.innerHourRow}>
-                <span style={{ flex: 1, textAlign: "left" }}>{item.label}</span>
-                {item.extra ? (
-                  item.extra
-                ) : (
-                  <div style={{ width: "75px" }}></div>
-                )}
+              <div
+                key={idx}
+                className={styles.innerHourRow}
+                style={{ gap: "10px" }}
+              >
+                {/* whiteSpace: "nowrap" гарантує, що дата не зламається */}
                 <span
-                  style={{ flex: 1, textAlign: "right", fontWeight: "bold" }}
+                  style={{ flex: 1, textAlign: "left", whiteSpace: "nowrap" }}
+                >
+                  {item.label}
+                </span>
+
+                {/* Рендеримо іконку вітру, тільки якщо вона є (ніяких пустих відступів для сонця) */}
+                {item.extra && item.extra}
+
+                {/* Якщо extra немає, даємо тексту flex: 2, щоб він мав більше місця */}
+                <span
+                  style={{
+                    flex: item.extra ? 1 : 2,
+                    textAlign: "right",
+                    fontWeight: "bold",
+                  }}
                 >
                   {item.value}
                 </span>
@@ -407,24 +448,25 @@ const FullModal = () => {
     <div
       className={styles.modalOverlay}
       onClick={() => dispatch(clearRegion())}
-      // ПОКАЗЫВАЕМ ТОЛЬКО ПОСЛЕ ЗАГРУЗКИ ВИДЕО (ИЛИ ЗАГЛУШКИ)
       style={{
-        opacity: isVideoReady ? 1 : 0,
-        visibility: isVideoReady ? "visible" : "hidden",
-        transition: "opacity 0.3s ease",
+        opacity: showModal ? 1 : 0,
+        visibility: showModal ? "visible" : "hidden",
+        transition: "opacity 0.4s ease, visibility 0.4s ease",
       }}
     >
-      {videoSrc && (
+      {currentVideoUrl && (
         <video
-          key={videoSrc}
+          key={currentVideoUrl}
           className={styles.bgVideo}
           autoPlay
           loop
           muted
           playsInline
-          src={videoSrc}
-          onCanPlayThrough={handleVideoSuccess}
-          onError={handleVideoError}
+          src={currentVideoUrl}
+          onCanPlayThrough={() => setLoadedVideoUrl(currentVideoUrl)}
+          onError={() => {
+            setFailedUrls((prev) => new Set(prev).add(currentVideoUrl));
+          }}
         />
       )}
 
@@ -503,7 +545,46 @@ const FullModal = () => {
         </div>
 
         <div className={styles.bottomLayout}>
-          {!isAiMode && (
+          {isAiMode ? (
+            /* ПАНЕЛЬ ОПИСАНИЯ AI (Вместо 10 дней) */
+            <div
+              className={`${styles.glassPanel} ${styles.dailyPanel}`}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className={styles.panelTitle}>
+                <Sparkles size={14} /> Про локальну AI модель
+              </div>
+              <div className={styles.aiDescContent}>
+                <div className={styles.aiDescBlock}>
+                  <strong>Що це за режим?</strong>
+                  <p>
+                    Це математична модель прогнозування, яка виконує всі
+                    розрахунки локально - безпосередньо у вашому браузері, без
+                    звернення до сторонніх серверів
+                  </p>
+                </div>
+                <div className={styles.aiDescBlock}>
+                  <strong>Як вона рахує?</strong>
+                  <p>
+                    Алгоритм бере останні 120 годин фактичної погоди та
+                    використовує лінійну регресію для визначення загального
+                    тренду. Також застосовується експоненційне згладжування для
+                    врахування добової сезонності - різниці між днем і ніччю
+                  </p>
+                </div>
+                <div className={styles.aiDescBlock}>
+                  <strong>Для чого це потрібно?</strong>
+                  <p>
+                    Режим демонструє роботу прогностичних алгоритмів у
+                    веб-застосунку. Він генерує незалежний, альтернативний
+                    прогноз на найближчі 24 години на основі чистих математичних
+                    формул
+                  </p>
+                </div>
+              </div>
+            </div>
+          ) : (
+            /* СТАНДАРТНА ПАНЕЛЬ НА 10 ДНІВ */
             <div
               className={`${styles.glassPanel} ${styles.dailyPanel}`}
               onClick={(e) => e.stopPropagation()}

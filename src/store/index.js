@@ -12,7 +12,6 @@ import {
   REGISTER,
 } from "redux-persist";
 
-// Надежный адаптер для sessionStorage
 const customSessionStorage = {
   getItem: (key) => Promise.resolve(sessionStorage.getItem(key)),
   setItem: (key, value) => Promise.resolve(sessionStorage.setItem(key, value)),
@@ -36,9 +35,8 @@ export const store = configureStore({
   reducer: persistedReducer,
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
-      serializableCheck: {
-        ignoredActions: [FLUSH, REHYDRATE, PAUSE, PERSIST, PURGE, REGISTER],
-      },
+      serializableCheck: false,
+      immutableCheck: false,
     }).concat(weatherApi.middleware),
 });
 
