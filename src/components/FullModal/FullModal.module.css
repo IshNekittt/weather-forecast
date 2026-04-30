@@ -5,8 +5,6 @@
   background: rgba(0, 0, 0, 0.2);
   color: white;
   overflow-y: auto;
-  overflow-x: hidden;
-  /* Плавное появление */
   animation: fadeIn 0.4s ease-out;
 }
 
@@ -28,8 +26,7 @@
   height: 100%;
   object-fit: cover;
   z-index: -1;
-  opacity: 1;
-  filter: brightness(1.1);
+  opacity: 1; /* Оставляем яркость видео, матовость даст blur на панелях */
 }
 
 .closeBtn {
@@ -386,7 +383,7 @@
 .innerModalOverlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.6);
+  background: none;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   z-index: 200;
@@ -398,7 +395,9 @@
 }
 
 .innerModalContent {
-  background: rgba(30, 30, 30, 0.8);
+  background: rgba(40, 40, 40, 0.4);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 20px;
   width: 100%;
