@@ -348,7 +348,7 @@ const FullModal = () => {
                   height="24"
                   viewBox="0 0 100 100"
                   style={{
-                    transform: `rotate(${dir}deg)`,
+                    transform: `rotate(${dir + 180}deg)`,
                     overflow: "visible",
                   }}
                 >
@@ -769,11 +769,12 @@ const FullModal = () => {
                   Сх
                 </span>
                 <svg
-                  width="65"
+                  width="65" // или другой размер
                   height="65"
                   viewBox="0 0 100 100"
                   style={{
-                    transform: `rotate(${current.wind_direction_10m}deg)`,
+                    // Додаємо 180 градусів, щоб стрілка показувала КУДИ дме вітер
+                    transform: `rotate(${current.wind_direction_10m + 180}deg)`,
                     position: "absolute",
                     overflow: "visible",
                   }}

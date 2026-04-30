@@ -1,18 +1,29 @@
-/* Сам контейнер позиционируется в точку клика */
 .widgetContainer {
   position: absolute;
-  /* Центрируем точку привязки строго посередине внизу */
   transform: translate(-50%, -100%);
-  /* Отступ вверх, чтобы уголок не перекрывал саму точку */
   margin-top: -10px;
   z-index: 10;
-  animation: popIn 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  opacity: 0;
+  pointer-events: none;
 }
 
-@keyframes popIn {
+.popIn {
+  opacity: 1;
+  pointer-events: auto;
+  animation: popInAnim 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+
+.popOut {
+  opacity: 1;
+  pointer-events: none;
+  /* Робимо анімацію трохи швидшою та енергійнішою */
+  animation: popOutAnim 0.25s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
+}
+
+@keyframes popInAnim {
   from {
     opacity: 0;
-    transform: translate(-50%, -90%) scale(0.9);
+    transform: translate(-50%, -85%) scale(0.7);
   }
   to {
     opacity: 1;
@@ -20,33 +31,46 @@
   }
 }
 
+@keyframes popOutAnim {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -100%) scale(1);
+  }
+  to {
+    opacity: 0;
+    /* Масштабуємо рівномірно (scale), щоб не було ефекту сардельки */
+    transform: translate(-50%, -80%) scale(0.2);
+  }
+}
+
 .card {
-  pointer-events: auto;
   width: max-content;
   min-width: 240px;
-  background: rgba(15, 15, 15, 0.7);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
+  min-height: 160px; /* Фіксуємо мінімальну висоту, щоб карточка не смикалась */
+  background: rgba(11, 1, 22, 0.78);
+  backdrop-filter: blur(25px);
+  -webkit-backdrop-filter: blur(25px);
   padding: 15px 20px;
-  border-radius: 16px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+  border-radius: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.7);
   position: relative;
   text-align: center;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
-/* МАГИЯ УГОЛКА: Треугольник, указывающий на область */
 .card::after {
   content: "";
   position: absolute;
-  bottom: -10px; /* Выпирает вниз */
+  bottom: -10px;
   left: 50%;
   transform: translateX(-50%);
   border-width: 10px 10px 0;
   border-style: solid;
-  /* Цвет должен совпадать с фоном карточки (примерно) */
-  border-color: rgba(15, 15, 15, 0.7) transparent transparent transparent;
+  border-color: rgba(11, 1, 22, 0.78) transparent transparent transparent;
 }
 
 .cardVideo {
