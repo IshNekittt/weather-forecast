@@ -16,7 +16,6 @@
 .popOut {
   opacity: 1;
   pointer-events: none;
-  /* Робимо анімацію трохи швидшою та енергійнішою */
   animation: popOutAnim 0.25s cubic-bezier(0.6, -0.28, 0.735, 0.045) forwards;
 }
 
@@ -38,30 +37,33 @@
   }
   to {
     opacity: 0;
-    /* Масштабуємо рівномірно (scale), щоб не було ефекту сардельки */
-    transform: translate(-50%, -80%) scale(0.2);
+    transform: translate(-50%, -85%) scale(0.3);
   }
 }
 
 .card {
   width: max-content;
   min-width: 240px;
-  min-height: 160px; /* Фіксуємо мінімальну висоту, щоб карточка не смикалась */
-  background: rgba(11, 1, 22, 0.78);
-  backdrop-filter: blur(25px);
-  -webkit-backdrop-filter: blur(25px);
-  padding: 15px 20px;
-  border-radius: 18px;
-  border: 1px solid rgba(255, 255, 255, 0.15);
-  box-shadow: 0 15px 45px rgba(0, 0, 0, 0.7);
+  min-height: 160px;
+  padding: 15px 22px;
+  border-radius: 20px; /* Заокруглення як у iOS */
   position: relative;
   text-align: center;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   justify-content: center;
+
+  /* Ефект скла */
+  background: rgba(15, 2, 35, 0.35); /* Дуже прозорий фон, щоб бачити відео */
+  backdrop-filter: blur(20px) saturate(1.6) brightness(1.1);
+  -webkit-backdrop-filter: blur(20px) saturate(1.6) brightness(1.1);
+
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
 }
 
+/* ТОЙ САМИЙ ХВОСТИК (ТРИКУТНИК) */
 .card::after {
   content: "";
   position: absolute;
@@ -70,7 +72,9 @@
   transform: translateX(-50%);
   border-width: 10px 10px 0;
   border-style: solid;
-  border-color: rgba(11, 1, 22, 0.78) transparent transparent transparent;
+  /* Колір має збігатися з фоном картки */
+  border-color: rgba(15, 2, 35, 0.35) transparent transparent transparent;
+  filter: drop-shadow(0 5px 5px rgba(0, 0, 0, 0.3));
 }
 
 .cardVideo {
@@ -79,11 +83,9 @@
   left: 0;
   width: 100%;
   height: 100%;
-
   object-fit: cover;
-  object-position: center;
   z-index: -1;
-  opacity: 0.8;
+  opacity: 1;
 }
 
 .closeBtn {
@@ -94,33 +96,26 @@
   border: none;
   color: rgba(255, 255, 255, 0.6);
   cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: color 0.2s ease;
-}
-
-.closeBtn:hover {
-  color: white;
+  z-index: 10;
 }
 
 .header {
   font-size: 1.1rem;
   font-weight: 600;
-  margin-bottom: 10px;
-  padding-right: 20px;
+  margin-bottom: 8px;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
 }
 
 .mainTemp {
-  font-size: 2.5rem;
-  font-weight: bold;
+  font-size: 3rem;
+  font-weight: 700;
   line-height: 1;
-  margin-bottom: 5px;
+  margin-bottom: 4px;
 }
 
 .feelsLike {
   font-size: 0.85rem;
-  opacity: 0.7;
+  opacity: 0.8;
   margin-bottom: 12px;
 }
 
@@ -129,14 +124,13 @@
   grid-template-columns: 1fr 1fr;
   gap: 8px;
   text-align: left;
-  font-size: 0.85rem;
+  font-size: 0.9rem;
 }
 
 .detailItem {
   display: flex;
   align-items: center;
   gap: 6px;
-  opacity: 0.9;
 }
 
 .loading {
