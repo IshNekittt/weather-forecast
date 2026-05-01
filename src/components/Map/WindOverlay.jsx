@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useMemo } from "react";
 import { useSelector } from "react-redux";
 import { useGetWindFieldQuery } from "../../store/weatherApi";
 
-// Генеруємо сітку координат рівно 1 раз (щоб не перераховувати при ререндерах)
 const LATS = [];
 const LONS = [];
 for (let lat = 44.5; lat <= 52.5; lat += 2) {
@@ -14,19 +13,20 @@ for (let lat = 44.5; lat <= 52.5; lat += 2) {
 const LATS_STR = LATS.join(",");
 const LONS_STR = LONS.join(",");
 
-const WindOverlay = ({ width, height, projection }) => {
+const WindOverlay = ({ width, height, projection, clipPathString }) => {
   const canvasRef = useRef(null);
   const isFullModalOpen = useSelector((state) => state.app.isFullModalOpen);
 
-  // Отримуємо вітер через Redux (з автоматичним кешуванням в Session Storage)
   const { data: windData, isSuccess } = useGetWindFieldQuery(
     { lats: LATS_STR, lons: LONS_STR },
-    { skip: !projection }, // Не робимо запит, поки проекція карти не готова
+    { skip: !projection },
   );
 
-  // ВИРІШЕННЯ ПРОБЛЕМИ: Використовуємо useMemo замість useState + useEffect.
-  // Масив stations буде перерахований ТІЛЬКИ якщо windData або projection реально зміняться.
-  // Ніяких зайвих ререндерів та безкінечних циклів.
+  // Створюємо Path2D об'єкт для маскування вітру тільки по території України
+  const clipPathObj = useMemo(() => {
+    return clipPathString ? new Path2D(clipPathString) : null;
+  }, [clipPathString]);
+
   const stations = useMemo(() => {
     if (!isSuccess || !windData || !projection) return [];
 
@@ -45,7 +45,6 @@ const WindOverlay = ({ width, height, projection }) => {
     });
   }, [windData, isSuccess, projection]);
 
-  // Анімація частинок
   useEffect(() => {
     if (stations.length === 0 || !canvasRef.current) return;
 
@@ -68,17 +67,20 @@ const WindOverlay = ({ width, height, projection }) => {
     }
 
     const draw = () => {
-      // МАГІЯ ПРОЗОРОСТІ: замість малювання кольором, ми кажемо браузеру
-      // "зроби все, що вже намальовано, на 15% прозорішим"
       ctx.globalCompositeOperation = "destination-out";
-      ctx.fillStyle = "rgba(0, 0, 0, 0.15)"; // Чим менше число, тим довші хвости
+      ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
       ctx.fillRect(0, 0, width, height);
 
-      // Повертаємо стандартний режим малювання для самих частинок
       ctx.globalCompositeOperation = "source-over";
 
+      // Застосовуємо маску, щоб вітер малювався ТІЛЬКИ в Україні
+      if (clipPathObj) {
+        ctx.save();
+        ctx.clip(clipPathObj);
+      }
+
       ctx.lineWidth = 1.1;
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.5)"; // Світлі нитки вітру
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
       ctx.beginPath();
 
       particles.forEach((p) => {
@@ -119,6 +121,11 @@ const WindOverlay = ({ width, height, projection }) => {
       });
 
       ctx.stroke();
+
+      if (clipPathObj) {
+        ctx.restore();
+      }
+
       animationFrameId = requestAnimationFrame(draw);
     };
 
@@ -127,14 +134,14 @@ const WindOverlay = ({ width, height, projection }) => {
     return () => {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
     };
-  }, [stations, width, height, isFullModalOpen]);
+  }, [stations, width, height, isFullModalOpen, clipPathObj]);
 
   return (
     <canvas
       ref={canvasRef}
       width={width}
       height={height}
-      style={{ width: "100%", height: "100%" }}
+      style={{ width: "100%", height: "100%", mixBlendMode: "screen" }}
     />
   );
 };

@@ -26,7 +26,7 @@
   height: 100%;
   object-fit: cover;
   z-index: -1;
-  opacity: 1; /* Оставляем яркость видео, матовость даст blur на панелях */
+  opacity: 1;
 }
 
 .closeBtn {
@@ -61,15 +61,6 @@
   gap: 15px;
 }
 
-@media (max-width: 767px) {
-  .content {
-    max-width: 460px;
-  }
-  .dailyPanel {
-    min-height: 530px;
-  }
-}
-
 /* ЗАГОЛОВОК */
 .header {
   text-align: center;
@@ -83,8 +74,8 @@
 }
 .currentTemp {
   font-size: 5rem;
-  font-weight: 200;
-  line-height: 1;
+  font-weight: 300; /* Безпечніша товщина для iOS Safari */
+  line-height: 1.1; /* Надійний line-height, щоб не "зрізало" текст */
   margin-bottom: 5px;
 }
 .condition {
@@ -98,7 +89,7 @@
 }
 
 .glassPanel {
-  background: rgba(25, 25, 25, 0.8); /* Идеальный полуматовый темный тон */
+  background: rgba(25, 25, 25, 0.8);
   backdrop-filter: blur(24px) saturate(1.2);
   -webkit-backdrop-filter: blur(24px) saturate(1.2);
   border-radius: 20px;
@@ -124,7 +115,6 @@
   gap: 21.5px;
   overflow-x: auto;
   padding-bottom: 10px;
-  /* Прячем скроллбар, но оставляем скролл */
   scrollbar-width: none;
 }
 .hourlyScroll::-webkit-scrollbar {
@@ -200,7 +190,7 @@
   flex-direction: column;
   justify-content: flex-start;
   min-height: 170px;
-  position: relative; /* Важно для абсолютных шкал */
+  position: relative;
 }
 
 .squareWidget.pressureWidget {
@@ -499,4 +489,20 @@
 .aiDescBlock p {
   margin: 0;
   opacity: 0.85;
+}
+
+/* АДАПТАЦІЯ ДЛЯ ТЕЛЕФОНІВ (iOS Safari fix) */
+@media (max-width: 767px) {
+  .content {
+    max-width: 460px;
+  }
+  .dailyPanel {
+    min-height: 530px;
+  }
+  .regionName {
+    font-size: 1.6rem; /* Зменшуємо для кращого відображення довгих назв */
+  }
+  .currentTemp {
+    font-size: 4rem; /* Безпечний розмір температури на дуже малих екранах */
+  }
 }

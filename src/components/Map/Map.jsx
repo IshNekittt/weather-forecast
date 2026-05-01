@@ -22,7 +22,6 @@ const Map = () => {
       .catch((err) => console.error(err));
   }, []);
 
-  // useMemo обов'язковий, щоб не викликати нескінченні запити вітру
   const projection = useMemo(() => {
     const proj = geoMercator();
     if (geographies.length > 0) {
@@ -35,6 +34,12 @@ const Map = () => {
   }, [geographies]);
 
   const pathGenerator = geoPath().projection(projection);
+
+  // Створюємо рядок SVG-шляху кордонів України для маски безпосередньо у Canvas
+  const clipPathString = useMemo(() => {
+    if (!projection || geographies.length === 0) return "";
+    return geographies.map((geo) => pathGenerator(geo)).join(" ");
+  }, [geographies, projection, pathGenerator]);
 
   const handleRegionClick = (geo, e) => {
     e.stopPropagation();
@@ -52,48 +57,23 @@ const Map = () => {
 
   return (
     <div className={styles.mapWrapper} onClick={() => dispatch(clearRegion())}>
+      {/* КАНВАС З ВІТРОМ (абсолютно позиційований, лежить під картою) */}
+      {geographies.length > 0 && (
+        <div className={styles.windCanvasContainer}>
+          <WindOverlay
+            width={VIEWBOX_WIDTH}
+            height={VIEWBOX_HEIGHT}
+            projection={projection}
+            clipPathString={clipPathString}
+          />
+        </div>
+      )}
+
+      {/* SVG КАРТА */}
       <svg
         viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
         className={styles.svgContainer}
       >
-        {/* 1. СТВОРЮЄМО МАСКУ (Силует України) */}
-        <defs>
-          <clipPath id="ukraine-clip">
-            {geographies.map((geo, index) => (
-              <path key={`clip-${index}`} d={pathGenerator(geo)} />
-            ))}
-          </clipPath>
-        </defs>
-
-        {/* 2. КАНВАС З ВІТРОМ (Обрізаний по масці, лежить під областями) */}
-        {/* КАНВАС З ВІТРОМ */}
-        {geographies.length > 0 && (
-          <g clipPath="url(#ukraine-clip)">
-            <foreignObject
-              x="0"
-              y="0"
-              width={VIEWBOX_WIDTH}
-              height={VIEWBOX_HEIGHT}
-              style={{ pointerEvents: "none", background: "transparent" }}
-            >
-              <div
-                style={{
-                  width: "100%",
-                  height: "100%",
-                  background: "transparent",
-                }}
-              >
-                <WindOverlay
-                  width={VIEWBOX_WIDTH}
-                  height={VIEWBOX_HEIGHT}
-                  projection={projection}
-                />
-              </div>
-            </foreignObject>
-          </g>
-        )}
-
-        {/* 3. ОБЛАСТІ ДЛЯ КЛІКІВ (Лежать зверху, напівпрозорі) */}
         <g>
           {geographies.map((geo, index) => {
             const isSelected =
@@ -112,7 +92,7 @@ const Map = () => {
         </g>
       </svg>
 
-      {/* Обертка для віджета (pointerEvents: none, щоб кліки проходили крізь неї на карту) */}
+      {/* Обертка для віджета */}
       <Suspense fallback={null}>
         <div
           style={{
