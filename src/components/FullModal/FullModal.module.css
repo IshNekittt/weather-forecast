@@ -2,7 +2,7 @@
   position: fixed;
   inset: 0;
   z-index: 100;
-  background: rgba(0, 0, 0, 0.2);
+  background: #0c021b;
   color: white;
   overflow-y: auto;
   animation: fadeIn 0.4s ease-out;
@@ -26,7 +26,6 @@
   height: 100%;
   object-fit: cover;
   z-index: -1;
-  opacity: 1;
 }
 
 .closeBtn {
@@ -69,6 +68,12 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+
+  /* КРИТИЧНИЙ ФІКС ДЛЯ iOS (WEBKIT) */
+  position: relative;
+  z-index: 10;
+  transform: translateZ(0);
+  -webkit-transform: translateZ(0);
 }
 
 .regionName {
@@ -78,14 +83,13 @@
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
-/* ФІКС ТЕМПЕРАТУРИ ДЛЯ iOS */
 .currentTemp {
   font-size: 5rem;
   font-weight: 400;
-  line-height: normal; /* Знімаємо ліміт висоти рядка */
+  line-height: normal;
   padding: 5px 0;
   margin: 0;
-  text-shadow: none; /* КРИТИЧНО ДЛЯ iOS: великий шрифт + text-shadow = краш текстури (пропадає текст) */
+  text-shadow: none;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -190,7 +194,6 @@
   grid-template-columns: 1fr 1fr;
 }
 
-/* На экранах от 768px (планшеты и ПК) работает гибкая сетка */
 @media (min-width: 768px) {
   .widgetsGrid {
     grid-column: 2;
@@ -363,6 +366,7 @@
   background: rgba(255, 255, 255, 0.1);
   border-bottom-color: transparent;
 }
+
 .sunSvg {
   width: 100%;
   max-width: 130px;
@@ -435,14 +439,12 @@
   border-bottom: none;
 }
 
-/* ВЕРОЯТНОСТЬ ДОЖДЯ */
 .precipProbText {
   color: #38bdf8;
   font-size: 0.75rem;
   font-weight: 600;
 }
 
-/* ДЕСКТОП: Две колонки */
 .bottomLayout {
   display: grid;
   gap: 15px;
@@ -475,7 +477,6 @@
   flex: 1;
 }
 
-/* СТИЛІ ДЛЯ ПАНЕЛІ ОПИСУ AI */
 .aiDescContent {
   display: flex;
   flex-direction: column;
@@ -514,9 +515,14 @@
   }
   .regionName {
     font-size: 1.8rem;
+    text-shadow: none; /* Забороняємо тіні на iOS для стабільності */
   }
   .currentTemp {
-    font-size: 4.2rem; /* Адаптуємо розмір для маленьких екранів */
+    font-size: 4.2rem;
+  }
+  .condition,
+  .highLow {
+    text-shadow: none; /* Забороняємо тіні на iOS для стабільності */
   }
   .dailyPanel {
     min-height: 530px;
