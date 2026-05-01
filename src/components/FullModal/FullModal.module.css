@@ -452,12 +452,9 @@
 
 .clickablePanel {
   cursor: pointer;
-  transition:
-    transform 0.2s,
-    background 0.2s;
+  transition: transform 0.2s ease-out;
 }
 .clickablePanel:hover {
-  background: rgba(255, 255, 255, 0.05);
   transform: scale(0.98);
 }
 
