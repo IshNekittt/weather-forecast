@@ -91,7 +91,6 @@ const FullModal = () => {
   const handleAiToggle = async (e) => {
     e.stopPropagation();
 
-    // РОБИМО СПОВІЩЕННЯ КЛІКАБЕЛЬНИМИ ТА ШВИДШИМИ (2.5 сек)
     if (isAiMode) {
       dispatch(toggleAiMode());
       toast.success(
@@ -178,7 +177,13 @@ const FullModal = () => {
       : apiData;
   const { current, daily, hourly } = displayData;
 
-  const todayStr = new Date().toISOString().split("T")[0];
+  // ИСПРАВЛЕНИЕ ПОЛУНОЧИ: собираем локальную дату, а не UTC, чтобы избежать ошибки часовых поясов
+  const todayDate = new Date();
+  const tYear = todayDate.getFullYear();
+  const tMonth = String(todayDate.getMonth() + 1).padStart(2, "0");
+  const tDay = String(todayDate.getDate()).padStart(2, "0");
+  const todayStr = `${tYear}-${tMonth}-${tDay}`;
+
   let todayIdxInApi = apiData.daily.time.findIndex((t) =>
     t.startsWith(todayStr),
   );
@@ -197,12 +202,14 @@ const FullModal = () => {
     ((Math.max(970, Math.min(1050, current.pressure_msl)) - 970) /
       (1050 - 970)) *
       270;
+
   const sunriseDate = new Date(daily.sunrise[activeIdx]);
   const sunsetDate = new Date(daily.sunset[activeIdx]);
   const nowTime = new Date().getTime();
   const isCurrentDay =
     nowTime >= sunriseDate.getTime() && nowTime <= sunsetDate.getTime();
   const currentProps = getWeatherProps(current.weather_code, isCurrentDay);
+
   const hourly24 = getNext24Hours(hourly, daily);
   const daylightPercent = Math.max(
     0,
@@ -300,7 +307,8 @@ const FullModal = () => {
                       justifyContent: "center",
                     }}
                   >
-                    {getWeatherProps(h.code).icon}
+                    {/* ИСПРАВЛЕНИЕ: проброшен аргумент h.isDay */}
+                    {getWeatherProps(h.code, h.isDay).icon}
                   </div>
                   <div style={{ width: "30px", textAlign: "left" }}>
                     {h.precipProb > 0 && (
@@ -591,7 +599,8 @@ const FullModal = () => {
               <div key={i} className={styles.hourBlock}>
                 <span className={styles.hourTime}>{hour.time}</span>
                 <div className={styles.hourIconWrapper}>
-                  {getWeatherProps(hour.code).icon}
+                  {/* ИСПРАВЛЕНИЕ: проброшен аргумент hour.isDay */}
+                  {getWeatherProps(hour.code, hour.isDay).icon}
                   {hour.precipProb > 0 && (
                     <span className={styles.precipProbText}>
                       {hour.precipProb}%

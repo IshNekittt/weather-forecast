@@ -1,4 +1,3 @@
-// src/utils/weatherUtils.jsx
 import React from "react";
 import {
   Sun,
@@ -60,21 +59,28 @@ export const getNext24Hours = (hourlyData, dailyData) => {
 
     let isDay = true;
     if (dailyData && dailyData.sunrise && dailyData.sunrise.length > 0) {
-      const dateStr = date.toISOString().split("T")[0];
-      let dailyIdx = dailyData.time.findIndex((t) => t.startsWith(dateStr));
-      if (dailyIdx === -1) dailyIdx = 0; // fallback на перший день
+      const dYear = date.getFullYear();
+      const dMonth = String(date.getMonth() + 1).padStart(2, "0");
+      const dDay = String(date.getDate()).padStart(2, "0");
+      const localDateStr = `${dYear}-${dMonth}-${dDay}`;
+
+      let dailyIdx = dailyData.time.findIndex((t) =>
+        t.startsWith(localDateStr),
+      );
+      if (dailyIdx === -1) dailyIdx = 0; // fallback для AI режиму
 
       const srDate = new Date(dailyData.sunrise[dailyIdx]);
       const ssDate = new Date(dailyData.sunset[dailyIdx]);
 
-      // Переконуємось, що ми порівнюємо час в межах однієї дати
+      // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ:
+      // Принудительно задаем закату и рассвету ту же дату (год, месяц, день),
+      // что и у проверяемого часа. Это решает баг AI-модели при переходе через полночь.
       srDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
       ssDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
 
       const t = date.getTime();
       isDay = t >= srDate.getTime() && t <= ssDate.getTime();
     } else {
-      // Глибокий fallback, якщо даних немає
       const h = date.getHours();
       isDay = h >= 6 && h <= 20;
     }
@@ -140,7 +146,7 @@ export const getBackgroundVideoName = (weatherCode, windSpeedKmh, dateStr) => {
   if (hour >= 6 && hour < 12) {
     timeOfDay = "Morning";
   } else if (hour >= 12 && hour < 18) {
-    timeOfDay = "Day"; // 12:00 - 17:59
+    timeOfDay = "Day";
   } else if (hour >= 18 && hour < 24) {
     timeOfDay = "Evening";
   }
