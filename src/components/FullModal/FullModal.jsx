@@ -177,8 +177,6 @@ const FullModal = () => {
       ? aiCalculations[selectedRegion.name].data
       : apiData;
   const { current, daily, hourly } = displayData;
-  const currentProps = getWeatherProps(current.weather_code);
-  const hourly24 = getNext24Hours(hourly);
 
   const todayStr = new Date().toISOString().split("T")[0];
   let todayIdxInApi = apiData.daily.time.findIndex((t) =>
@@ -201,6 +199,11 @@ const FullModal = () => {
       270;
   const sunriseDate = new Date(daily.sunrise[activeIdx]);
   const sunsetDate = new Date(daily.sunset[activeIdx]);
+  const nowTime = new Date().getTime();
+  const isCurrentDay =
+    nowTime >= sunriseDate.getTime() && nowTime <= sunsetDate.getTime();
+  const currentProps = getWeatherProps(current.weather_code, isCurrentDay);
+  const hourly24 = getNext24Hours(hourly, daily);
   const daylightPercent = Math.max(
     0,
     Math.min(1, (new Date() - sunriseDate) / (sunsetDate - sunriseDate)),
@@ -214,17 +217,34 @@ const FullModal = () => {
     if (selectedDay === null) return null;
     const startIndex = isAiMode ? 0 : selectedDay * 24;
     const dayHours = [];
+
+    const dIdx = isAiMode ? 0 : selectedDay;
+    const baseSrDate = new Date(daily.sunrise[dIdx]);
+    const baseSsDate = new Date(daily.sunset[dIdx]);
+
     for (let i = startIndex; i < startIndex + 24; i++) {
       if (!hourly.time[i]) break;
+      const date = new Date(hourly.time[i]);
+
+      const srDate = new Date(baseSrDate);
+      const ssDate = new Date(baseSsDate);
+      srDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+      ssDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+
+      const t = date.getTime();
+      const isDay = t >= srDate.getTime() && t <= ssDate.getTime();
+
       dayHours.push({
-        time: new Date(hourly.time[i]).toLocaleTimeString("uk-UA", timeOpts),
+        time: date.toLocaleTimeString("uk-UA", timeOpts),
         temp: Math.round(hourly.temperature_2m[i]),
         code: hourly.weather_code[i],
         precipProb: hourly.precipitation_probability
           ? hourly.precipitation_probability[i]
           : 0,
+        isDay,
       });
     }
+
     const dayName =
       selectedDay === todayIdxInApi
         ? "Сьогодні"

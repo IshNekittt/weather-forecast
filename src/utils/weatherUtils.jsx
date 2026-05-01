@@ -1,6 +1,10 @@
+// src/utils/weatherUtils.jsx
 import React from "react";
 import {
   Sun,
+  Moon,
+  CloudSun,
+  CloudMoon,
   Cloud,
   CloudRain,
   CloudSnow,
@@ -9,11 +13,17 @@ import {
   CloudDrizzle,
 } from "lucide-react";
 
-export const getWeatherProps = (code) => {
+export const getWeatherProps = (code, isDay = true) => {
   const map = {
-    0: { text: "Ясно", icon: <Sun size={24} /> },
-    1: { text: "Переважно ясно", icon: <Cloud size={24} /> },
-    2: { text: "Мінлива хмарність", icon: <Cloud size={24} /> },
+    0: { text: "Ясно", icon: isDay ? <Sun size={24} /> : <Moon size={24} /> },
+    1: {
+      text: "Переважно ясно",
+      icon: isDay ? <CloudSun size={24} /> : <CloudMoon size={24} />,
+    },
+    2: {
+      text: "Мінлива хмарність",
+      icon: isDay ? <CloudSun size={24} /> : <CloudMoon size={24} />,
+    },
     3: { text: "Похмуро", icon: <Cloud size={24} /> },
     45: { text: "Туман", icon: <CloudFog size={24} /> },
     48: { text: "Туман з інеєм", icon: <CloudFog size={24} /> },
@@ -26,10 +36,15 @@ export const getWeatherProps = (code) => {
     75: { text: "Сильний сніг", icon: <CloudSnow size={24} /> },
     95: { text: "Гроза", icon: <CloudLightning size={24} /> },
   };
-  return map[code] || { text: "Невідомо", icon: <Sun size={24} /> };
+  return (
+    map[code] || {
+      text: "Невідомо",
+      icon: isDay ? <Sun size={24} /> : <Moon size={24} />,
+    }
+  );
 };
 
-export const getNext24Hours = (hourlyData) => {
+export const getNext24Hours = (hourlyData, dailyData) => {
   const now = new Date();
   now.setMinutes(0, 0, 0);
 
@@ -42,6 +57,28 @@ export const getNext24Hours = (hourlyData) => {
   for (let i = startIndex; i < startIndex + 24; i++) {
     if (!hourlyData.time[i]) break;
     const date = new Date(hourlyData.time[i]);
+
+    let isDay = true;
+    if (dailyData && dailyData.sunrise && dailyData.sunrise.length > 0) {
+      const dateStr = date.toISOString().split("T")[0];
+      let dailyIdx = dailyData.time.findIndex((t) => t.startsWith(dateStr));
+      if (dailyIdx === -1) dailyIdx = 0; // fallback на перший день
+
+      const srDate = new Date(dailyData.sunrise[dailyIdx]);
+      const ssDate = new Date(dailyData.sunset[dailyIdx]);
+
+      // Переконуємось, що ми порівнюємо час в межах однієї дати
+      srDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+      ssDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
+
+      const t = date.getTime();
+      isDay = t >= srDate.getTime() && t <= ssDate.getTime();
+    } else {
+      // Глибокий fallback, якщо даних немає
+      const h = date.getHours();
+      isDay = h >= 6 && h <= 20;
+    }
+
     next24.push({
       time: date.toLocaleTimeString("uk-UA", {
         hour: "2-digit",
@@ -53,6 +90,7 @@ export const getNext24Hours = (hourlyData) => {
         ? hourlyData.precipitation_probability[i]
         : 0,
       index: i,
+      isDay,
     });
   }
   if (next24.length > 0) next24[0].time = "Зараз";
