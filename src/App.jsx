@@ -1,8 +1,8 @@
 import React, { Suspense, lazy } from "react";
 import { Toaster } from "react-hot-toast";
-import { useDispatch, useSelector } from "react-redux"; // Додали useSelector
+import { useDispatch, useSelector } from "react-redux";
 import { clearRegion } from "./store/appSlice";
-import clsx from "clsx"; // У тебе в package.json є ця бібліотека
+import clsx from "clsx";
 import styles from "./App.module.css";
 
 const Map = lazy(() => import("./components/Map/Map"));
@@ -10,7 +10,6 @@ const FullModal = lazy(() => import("./components/FullModal/FullModal"));
 
 function App() {
   const dispatch = useDispatch();
-  // Отримуємо стан модалки
   const isFullModalOpen = useSelector((state) => state.app.isFullModalOpen);
 
   return (
@@ -18,18 +17,19 @@ function App() {
       className={styles.appContainer}
       onClick={() => dispatch(clearRegion())}
     >
-      {/* Додаємо клас paused, якщо модалка відкрита */}
+      {/* МАКСИМАЛЬНО ОПТИМИЗИРОВАННЫЙ ФОН: Полупрозрачные летающие облака */}
       <div
         className={clsx(
-          styles.auroraBackground,
+          styles.animatedBackground,
           isFullModalOpen && styles.paused,
         )}
       >
-        <div className={`${styles.meshBand} ${styles.bandIndigo}`}></div>
-        <div className={`${styles.meshBand} ${styles.bandElectric}`}></div>
-        <div className={`${styles.meshBand} ${styles.bandDeep}`}></div>
-        <div className={`${styles.meshBand} ${styles.bandOrangeA}`}></div>
-        <div className={`${styles.meshBand} ${styles.bandOrangeB}`}></div>
+        <div className={clsx(styles.cloud, styles.cloud1)}></div>
+        <div className={clsx(styles.cloud, styles.cloud2)}></div>
+        <div className={clsx(styles.cloud, styles.cloud3)}></div>
+        <div className={clsx(styles.cloud, styles.cloud4)}></div>
+        <div className={clsx(styles.cloud, styles.cloud5)}></div>
+        <div className={clsx(styles.cloud, styles.cloud6)}></div>
       </div>
 
       <div className={styles.contentOverlay}>

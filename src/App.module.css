@@ -8,155 +8,159 @@
   background-color: #0c021b; /* Глубокая база */
 }
 
-.auroraBackground {
+.animatedBackground {
   position: absolute;
-  inset: -10%;
+  inset: 0;
   z-index: 0;
   overflow: hidden;
-  transform: translate3d(0, 0, 0); /* Форсируем GPU для Vercel */
-  backface-visibility: hidden;
-}
-
-.meshBand {
-  position: absolute;
-  filter: blur(110px);
-  transform: translate3d(0, 0, 0);
   pointer-events: none;
 }
 
-.bandIndigo {
-  width: 150vw;
-  height: 100vh;
-  background: #2c1e6e;
-  top: -10%;
-  left: -25vw;
-  opacity: 0.7;
-  animation: slowMorph 55s infinite ease-in-out;
-  z-index: 1;
-}
-
-.bandElectric {
-  width: 120vw;
-  height: 60vh;
-  background: #8b2df7;
-  top: 20%;
-  left: -10vw;
-  opacity: 0.35;
-  animation: slowMorph 45s infinite ease-in-out reverse;
-  z-index: 2;
-}
-
-.bandOrangeA,
-.bandOrangeB {
-  width: 120vw;
-  height: 35vh;
+/*
+  БАЗОВОЕ ОБЛАКО - ИДЕАЛЬНАЯ ОПТИМИЗАЦИЯ
+  Никаких box-shadow или filter: blur. Форма строится геометрически.
+  will-change резервирует память GPU для идеальных 60 FPS.
+*/
+.cloud {
   position: absolute;
-  filter: blur(100px);
+  background: currentColor; /* Цвет наследуется от класса ниже */
+  border-radius: 100px;
+  will-change: transform;
+}
+.cloud::before,
+.cloud::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+  border-radius: 100px;
+}
+.cloud::before {
+  width: 60%;
+  height: 140%;
+  top: -70%;
+  left: 15%;
+}
+.cloud::after {
+  width: 45%;
+  height: 120%;
+  top: -40%;
+  right: 15%;
+}
+
+/*
+  Цвета, размеры и прозрачность.
+  Используем неоновые/закатные цвета, чтобы облака выглядели "необычно" и стильно
+*/
+.cloud1 {
+  color: #8b2df7;
+  width: 180px;
+  height: 50px;
+  opacity: 0.15;
+  top: 15%;
+  animation: floatA 40s linear infinite;
+}
+
+.cloud2 {
+  color: #ff6a00;
+  width: 130px;
+  height: 40px;
+  opacity: 0.12;
+  top: 35%;
+  animation: floatB 32s linear infinite;
+  animation-delay: -10s;
+}
+
+.cloud3 {
+  color: #ffffff;
+  width: 220px;
+  height: 60px;
+  opacity: 0.06; /* Белое облако делаем самым прозрачным */
+  top: 60%;
+  animation: floatA 45s linear infinite reverse;
+  animation-delay: -25s;
+}
+
+.cloud4 {
+  color: #d279ff;
+  width: 150px;
+  height: 45px;
+  opacity: 0.18;
+  top: 80%;
+  animation: floatB 38s linear infinite;
+  animation-delay: -5s;
+}
+
+.cloud5 {
+  color: #2c1e6e;
+  width: 260px;
+  height: 70px;
+  opacity: 0.25; /* Темно-синее можно сделать чуть плотнее */
+  top: 25%;
+  animation: floatA 50s linear infinite reverse;
+  animation-delay: -15s;
+}
+
+.cloud6 {
+  color: #aa3bff;
+  width: 110px;
+  height: 35px;
+  opacity: 0.15;
   top: 50%;
-  left: 50%;
-  margin-left: -60vw;
-  margin-top: -17vh;
-  mix-blend-mode: screen;
-  z-index: 4;
+  animation: floatB 28s linear infinite;
+  animation-delay: -20s;
 }
 
-.bandOrangeA {
-  background: radial-gradient(circle at center, #ff4d00 0%, transparent 75%);
-  animation: smoothChaosA 35s infinite ease-in-out;
-}
-
-.bandOrangeB {
-  background: radial-gradient(circle at center, #ffbb00 0%, transparent 75%);
-  animation: smoothChaosB 35s infinite ease-in-out;
-}
-
-.bandDeep {
-  width: 100vw;
-  height: 100vh;
-  background: #15032e;
-  top: 50%;
-  left: 50%;
-  margin-left: -50vw;
-  margin-top: -50vh;
-  filter: blur(120px);
-  opacity: 0.8;
-  animation: shadowWander 60s infinite linear;
-  z-index: 3;
-}
-
-@keyframes smoothChaosA {
+/*
+  АНИМАЦИИ (Только через translate3d для 100% аппаратного ускорения).
+  Облака плывут по синусоиде с одного края экрана за другой.
+*/
+@keyframes floatA {
   0% {
-    transform: translate3d(-60vw, 20vh, 0) rotate(-15deg) scale(0.5, 0.3);
-    opacity: 0;
+    transform: translate3d(-300px, 0, 0);
   }
-  30% {
-    transform: translate3d(0, 0, 0) rotate(0deg) scale(1, 1);
-    opacity: 0.5;
-  }
-  60% {
-    transform: translate3d(10vw, -15vh, 0) rotate(15deg) scale(1.4, 0.6);
-    opacity: 0.6;
-  }
-  100% {
-    transform: translate3d(60vw, -20vh, 0) rotate(45deg) scale(0.3, 0.3);
-    opacity: 0;
-  }
-}
-
-@keyframes smoothChaosB {
-  0% {
-    transform: translate3d(-60vw, 15vh, 0) rotate(-20deg) scale(0.4, 0.2);
-    opacity: 0;
-  }
-  35% {
-    transform: translate3d(0, 0, 0) rotate(5deg) scale(0.9, 0.9);
-    opacity: 0.4;
-  }
-  65% {
-    transform: translate3d(-15vw, -20vh, 0) rotate(-10deg) scale(1.2, 0.5);
-    opacity: 0.6;
-  }
-  100% {
-    transform: translate3d(10vw, 70vh, 0) rotate(-30deg) scale(0.3, 0.3);
-    opacity: 0;
-  }
-}
-
-@keyframes slowMorph {
-  0%,
-  100% {
-    border-radius: 50%;
-    transform: translate3d(0, 0, 0) scale(1) rotate(0deg);
+  25% {
+    transform: translate3d(25vw, -20px, 0);
   }
   50% {
-    border-radius: 40% 60% 30% 70%;
-    transform: translate3d(2%, 2%, 0) scale(1.1) rotate(180deg);
+    transform: translate3d(50vw, 15px, 0);
+  }
+  75% {
+    transform: translate3d(75vw, -10px, 0);
+  }
+  100% {
+    transform: translate3d(calc(100vw + 300px), 0, 0);
   }
 }
 
-@keyframes shadowWander {
+@keyframes floatB {
   0% {
-    transform: translate3d(-5vw, -5vh, 0) rotate(0deg);
+    transform: translate3d(-300px, 0, 0);
+  }
+  33% {
+    transform: translate3d(33vw, 25px, 0);
+  }
+  66% {
+    transform: translate3d(66vw, -20px, 0);
   }
   100% {
-    transform: translate3d(-5vw, -5vh, 0) rotate(360deg);
+    transform: translate3d(calc(100vw + 300px), 0, 0);
   }
 }
 
 .contentOverlay {
   position: relative;
-  z-index: 5;
+  z-index: 5; /* Контент строго поверх облаков */
   display: flex;
   flex-direction: column;
   padding: 1rem;
   width: 100%;
   height: 100%;
   background: transparent;
-  backdrop-filter: none; /* Убираем глобальное мыло, чтобы не мешать виджетам */
+  backdrop-filter: none;
   -webkit-backdrop-filter: none;
   overflow: hidden;
 }
 
 .paused * {
-  animation-play-state: paused;
+  animation-play-state: paused !important;
 }

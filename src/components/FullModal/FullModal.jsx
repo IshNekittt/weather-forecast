@@ -39,7 +39,6 @@ const FullModal = () => {
   const [selectedDay, setSelectedDay] = useState(null);
   const [metricModal, setMetricModal] = useState(null);
 
-  // Новий ідеальний підхід
   const [loadedVideoUrl, setLoadedVideoUrl] = useState(null);
   const [failedUrls, setFailedUrls] = useState(new Set());
 
@@ -53,7 +52,6 @@ const FullModal = () => {
   const baseUrl = import.meta.env.VITE_VIDEO_BASE_URL;
   const fallbackUrl = `${baseUrl}Clear_Morning_No_Wind.mp4`;
 
-  // 1. Формуємо Derived State URL
   let idealUrl = null;
   if (apiData && isFullModalOpen) {
     const timeStr = apiData.current.time || new Date().toISOString();
@@ -73,12 +71,9 @@ const FullModal = () => {
     currentVideoUrl = null;
   }
 
-  // Модалка з'являється, якщо актуальне відео завантажилось (або якщо відео відсутнє взагалі)
   const showModal = loadedVideoUrl === currentVideoUrl || !currentVideoUrl;
 
-  // 2. Лоадер чітко стежить за завантаженням (ніяких set-стейтів всередині!)
   useEffect(() => {
-    // Якщо модалка відкрита, нам ПОТРІБНЕ відео, але воно ЩЕ НЕ завантажилось
     if (
       isFullModalOpen &&
       currentVideoUrl &&
@@ -95,34 +90,84 @@ const FullModal = () => {
 
   const handleAiToggle = async (e) => {
     e.stopPropagation();
+
+    // РОБИМО СПОВІЩЕННЯ КЛІКАБЕЛЬНИМИ ТА ШВИДШИМИ (2.5 сек)
     if (isAiMode) {
       dispatch(toggleAiMode());
-      toast.success("Повернуто до даних агрегатора");
+      toast.success(
+        (t) => (
+          <div
+            onClick={() => toast.dismiss(t.id)}
+            style={{ cursor: "pointer", width: "100%" }}
+          >
+            Повернуто до даних агрегатора
+          </div>
+        ),
+        { duration: 2500 },
+      );
       return;
     }
+
     const cachedCalc = aiCalculations[selectedRegion.name];
     if (cachedCalc && Date.now() - cachedCalc.timestamp < 3600000) {
       dispatch(toggleAiMode());
-      toast.success("Завантажено локальний AI прогноз");
-    } else {
-      const calcPromise = generateLocalForecast(
-        apiData,
-        selectedRegion.lat,
-        selectedRegion.lon,
+      toast.success(
+        (t) => (
+          <div
+            onClick={() => toast.dismiss(t.id)}
+            style={{ cursor: "pointer", width: "100%" }}
+          >
+            Завантажено локальний AI прогноз
+          </div>
+        ),
+        { duration: 2500 },
       );
-      toast.promise(calcPromise, {
-        loading: "Математичний розрахунок...",
-        success: "AI прогноз побудовано!",
-        error: "Помилка розрахунку",
-      });
+    } else {
+      const toastId = toast.loading((t) => (
+        <div
+          onClick={() => toast.dismiss(t.id)}
+          style={{ cursor: "pointer", width: "100%" }}
+        >
+          Математичний розрахунок...
+        </div>
+      ));
+
       try {
+        const calcPromise = generateLocalForecast(
+          apiData,
+          selectedRegion.lat,
+          selectedRegion.lon,
+        );
         const result = await calcPromise;
         dispatch(
           setAiCalculation({ regionName: selectedRegion.name, data: result }),
         );
         dispatch(toggleAiMode());
+
+        toast.success(
+          (t) => (
+            <div
+              onClick={() => toast.dismiss(t.id)}
+              style={{ cursor: "pointer", width: "100%" }}
+            >
+              AI прогноз побудовано!
+            </div>
+          ),
+          { id: toastId, duration: 2500 },
+        );
       } catch (err) {
         console.error(err);
+        toast.error(
+          (t) => (
+            <div
+              onClick={() => toast.dismiss(t.id)}
+              style={{ cursor: "pointer", width: "100%" }}
+            >
+              Помилка розрахунку
+            </div>
+          ),
+          { id: toastId, duration: 2500 },
+        );
       }
     }
   };
@@ -165,7 +210,6 @@ const FullModal = () => {
   const sunriseStr = sunriseDate.toLocaleTimeString("uk-UA", timeOpts);
   const sunsetStr = sunsetDate.toLocaleTimeString("uk-UA", timeOpts);
 
-  // --- ВНУТРЕННИЕ МОДАЛКИ ---
   const renderHourlyForSelectedDay = () => {
     if (selectedDay === null) return null;
     const startIndex = isAiMode ? 0 : selectedDay * 24;
@@ -288,7 +332,6 @@ const FullModal = () => {
             "uk-UA",
             timeOpts,
           );
-          // Використовуємо нерозривний пробіл (\u00A0), щоб "Захід 20:39" ніколи не розривалося на два рядки
           valStr = `Схід\u00A0${sr} • Захід\u00A0${ss}`;
         } else {
           valStr = `${Math.round(daily[metricModal.key][dIdx])} ${metricModal.unit}`;
@@ -416,17 +459,14 @@ const FullModal = () => {
                 className={styles.innerHourRow}
                 style={{ gap: "10px" }}
               >
-                {/* whiteSpace: "nowrap" гарантує, що дата не зламається */}
                 <span
                   style={{ flex: 1, textAlign: "left", whiteSpace: "nowrap" }}
                 >
                   {item.label}
                 </span>
 
-                {/* Рендеримо іконку вітру, тільки якщо вона є (ніяких пустих відступів для сонця) */}
                 {item.extra && item.extra}
 
-                {/* Якщо extra немає, даємо тексту flex: 2, щоб він мав більше місця */}
                 <span
                   style={{
                     flex: item.extra ? 1 : 2,
@@ -546,7 +586,6 @@ const FullModal = () => {
 
         <div className={styles.bottomLayout}>
           {isAiMode ? (
-            /* ПАНЕЛЬ ОПИСАНИЯ AI (Вместо 10 дней) */
             <div
               className={`${styles.glassPanel} ${styles.dailyPanel}`}
               onClick={(e) => e.stopPropagation()}
@@ -584,7 +623,6 @@ const FullModal = () => {
               </div>
             </div>
           ) : (
-            /* СТАНДАРТНА ПАНЕЛЬ НА 10 ДНІВ */
             <div
               className={`${styles.glassPanel} ${styles.dailyPanel}`}
               onClick={(e) => e.stopPropagation()}
@@ -630,7 +668,6 @@ const FullModal = () => {
             className={styles.widgetsGrid}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* СОЛНЦЕ */}
             <div
               className={`${styles.glassPanel} ${styles.squareWidget} ${styles.clickablePanel}`}
               onClick={() =>
@@ -675,7 +712,6 @@ const FullModal = () => {
                 <span>Захід {sunsetStr}</span>
               </div>
             </div>
-            {/* ОСТАЛЬНЫЕ ВИДЖЕТЫ */}
             <div
               className={`${styles.glassPanel} ${styles.squareWidget} ${styles.clickablePanel}`}
               onClick={() =>
@@ -769,11 +805,10 @@ const FullModal = () => {
                   Сх
                 </span>
                 <svg
-                  width="65" // или другой размер
+                  width="65"
                   height="65"
                   viewBox="0 0 100 100"
                   style={{
-                    // Додаємо 180 градусів, щоб стрілка показувала КУДИ дме вітер
                     transform: `rotate(${current.wind_direction_10m + 180}deg)`,
                     position: "absolute",
                     overflow: "visible",

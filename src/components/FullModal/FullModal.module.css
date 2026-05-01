@@ -65,7 +65,7 @@
 .header {
   text-align: center;
   margin-bottom: 20px;
-  flex-shrink: 0; /* Запобігає стисненню тексту в Safari */
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -78,12 +78,15 @@
   text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }
 
+/* ФІКС ТЕМПЕРАТУРИ ДЛЯ iOS */
 .currentTemp {
   font-size: 5rem;
-  font-weight: 400; /* Безпечна товщина для iOS Safari */
-  line-height: 1;
-  margin: 0 0 5px 0;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+  font-weight: 400;
+  line-height: normal; /* Знімаємо ліміт висоти рядка */
+  padding: 5px 0;
+  margin: 0;
+  text-shadow: none; /* КРИТИЧНО ДЛЯ iOS: великий шрифт + text-shadow = краш текстури (пропадає текст) */
+  -webkit-font-smoothing: antialiased;
 }
 
 .condition {
@@ -439,11 +442,11 @@
   font-weight: 600;
 }
 
-/* ДЕСКТОП: Две колонки (Прогноз 10 дней слева, виджеты справа) */
+/* ДЕСКТОП: Две колонки */
 .bottomLayout {
   display: grid;
   gap: 15px;
-  grid-template-columns: 1fr; /* На мобилке всё в один столбик */
+  grid-template-columns: 1fr;
 }
 
 @media (min-width: 768px) {
@@ -503,18 +506,17 @@
   opacity: 0.85;
 }
 
-/* АДАПТАЦІЯ ДЛЯ ТЕЛЕФОНІВ (iOS Safari fix) */
+/* АДАПТАЦІЯ ДЛЯ ТЕЛЕФОНІВ */
 @media (max-width: 767px) {
   .content {
     max-width: 460px;
-    /* КЛЮЧОВИЙ ФІКС: Опускаємо контент нижче UI елементів Telegram та кнопок закриття */
     padding-top: 85px;
   }
   .regionName {
     font-size: 1.8rem;
   }
   .currentTemp {
-    font-size: 4.5rem;
+    font-size: 4.2rem; /* Адаптуємо розмір для маленьких екранів */
   }
   .dailyPanel {
     min-height: 530px;

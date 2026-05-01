@@ -22,11 +22,6 @@ const WindOverlay = ({ width, height, projection, clipPathString }) => {
     { skip: !projection },
   );
 
-  // Створюємо Path2D об'єкт для маскування вітру тільки по території України
-  const clipPathObj = useMemo(() => {
-    return clipPathString ? new Path2D(clipPathString) : null;
-  }, [clipPathString]);
-
   const stations = useMemo(() => {
     if (!isSuccess || !windData || !projection) return [];
 
@@ -47,12 +42,23 @@ const WindOverlay = ({ width, height, projection, clipPathString }) => {
 
   useEffect(() => {
     if (stations.length === 0 || !canvasRef.current) return;
-
     if (isFullModalOpen) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext("2d");
     let animationFrameId;
+
+    // СУПЕР-ОПТИМІЗАЦІЯ ДЛЯ iOS:
+    // Замість постійного Path2D clipping на кожному кадрі, ми один раз
+    // малюємо маску в пам'яті (Offscreen Canvas). Це прибирає лаги!
+    const maskCanvas = document.createElement("canvas");
+    maskCanvas.width = width;
+    maskCanvas.height = height;
+    const maskCtx = maskCanvas.getContext("2d");
+    maskCtx.fillStyle = "white"; // Білим кольором заливаємо те, що має бути видимим
+    if (clipPathString) {
+      maskCtx.fill(new Path2D(clipPathString));
+    }
 
     const PARTICLE_COUNT = 450;
     const MAX_AGE = 150;
@@ -72,13 +78,6 @@ const WindOverlay = ({ width, height, projection, clipPathString }) => {
       ctx.fillRect(0, 0, width, height);
 
       ctx.globalCompositeOperation = "source-over";
-
-      // Застосовуємо маску, щоб вітер малювався ТІЛЬКИ в Україні
-      if (clipPathObj) {
-        ctx.save();
-        ctx.clip(clipPathObj);
-      }
-
       ctx.lineWidth = 1.1;
       ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
       ctx.beginPath();
@@ -122,8 +121,11 @@ const WindOverlay = ({ width, height, projection, clipPathString }) => {
 
       ctx.stroke();
 
-      if (clipPathObj) {
-        ctx.restore();
+      // ШВИДКЕ ВІДРІЗАННЯ КОРДОНІВ (Без лагів на iPhone)
+      if (clipPathString) {
+        ctx.globalCompositeOperation = "destination-in";
+        ctx.drawImage(maskCanvas, 0, 0);
+        ctx.globalCompositeOperation = "source-over";
       }
 
       animationFrameId = requestAnimationFrame(draw);
@@ -134,7 +136,7 @@ const WindOverlay = ({ width, height, projection, clipPathString }) => {
     return () => {
       if (animationFrameId) cancelAnimationFrame(animationFrameId);
     };
-  }, [stations, width, height, isFullModalOpen, clipPathObj]);
+  }, [stations, width, height, isFullModalOpen, clipPathString]);
 
   return (
     <canvas
