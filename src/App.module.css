@@ -5,7 +5,7 @@
   height: 100vh;
   position: relative;
   overflow: hidden;
-  background-color: #0c021b; /* Глубокая база */
+  background-color: #0c021b;
 }
 
 .animatedBackground {
@@ -16,14 +16,9 @@
   pointer-events: none;
 }
 
-/*
-  БАЗОВОЕ ОБЛАКО - ИДЕАЛЬНАЯ ОПТИМИЗАЦИЯ
-  Никаких box-shadow или filter: blur. Форма строится геометрически.
-  will-change резервирует память GPU для идеальных 60 FPS.
-*/
 .cloud {
   position: absolute;
-  background: currentColor; /* Цвет наследуется от класса ниже */
+  background: currentColor;
   border-radius: 100px;
   will-change: transform;
 }
@@ -47,10 +42,6 @@
   right: 15%;
 }
 
-/*
-  Цвета, размеры и прозрачность.
-  Используем неоновые/закатные цвета, чтобы облака выглядели "необычно" и стильно
-*/
 .cloud1 {
   color: #8b2df7;
   width: 180px;
@@ -74,7 +65,7 @@
   color: #ffffff;
   width: 220px;
   height: 60px;
-  opacity: 0.06; /* Белое облако делаем самым прозрачным */
+  opacity: 0.06;
   top: 60%;
   animation: floatA 45s linear infinite reverse;
   animation-delay: -25s;
@@ -94,7 +85,7 @@
   color: #2c1e6e;
   width: 260px;
   height: 70px;
-  opacity: 0.25; /* Темно-синее можно сделать чуть плотнее */
+  opacity: 0.25;
   top: 25%;
   animation: floatA 50s linear infinite reverse;
   animation-delay: -15s;
@@ -110,10 +101,6 @@
   animation-delay: -20s;
 }
 
-/*
-  АНИМАЦИИ (Только через translate3d для 100% аппаратного ускорения).
-  Облака плывут по синусоиде с одного края экрана за другой.
-*/
 @keyframes floatA {
   0% {
     transform: translate3d(-300px, 0, 0);
@@ -149,7 +136,7 @@
 
 .contentOverlay {
   position: relative;
-  z-index: 5; /* Контент строго поверх облаков */
+  z-index: 5;
   display: flex;
   flex-direction: column;
   padding: 1rem;

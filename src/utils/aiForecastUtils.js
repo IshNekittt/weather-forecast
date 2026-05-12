@@ -1,17 +1,10 @@
 import regression from "regression";
 import SunCalc from "suncalc";
 
-/**
- * МАТЕМАТИЧНА МОДЕЛЬ: Лінійна регресія з експоненційним згладжуванням добової сезонності.
- * Чому це круто: Тренд рахується за всіма даними, але відхилення (ніч/день)
- * береться з більшою вагою для вчорашнього дня, ніж для дня 5 діб тому.
- */
 const predictParam = (dataPoints, futureX, min = -100, max = 10000) => {
-  // 1. Глобальний тренд (лінійна регресія по всіх 120 годинах)
   const result = regression.linear(dataPoints, { precision: 4 });
   const trendValue = result.predict(futureX)[1];
 
-  // 2. Експоненційне згладжування добової сезонності
   let weightedSumDeviation = 0;
   let totalWeight = 0;
 
@@ -19,14 +12,10 @@ const predictParam = (dataPoints, futureX, min = -100, max = 10000) => {
     const pastX = dataPoints[i][0];
     const pastVal = dataPoints[i][1];
 
-    // Шукаємо ту саму годину в минулі дні (різниця кратна 24)
     if ((futureX - pastX) % 24 === 0) {
       const pastTrendValue = result.predict(pastX)[1];
       const deviation = pastVal - pastTrendValue;
 
-      // ВАГА: Чим ближче pastX до futureX, тим більша вага.
-      // Наприклад, для вчора (futureX - 24) вага буде великою, а для 5 днів тому - маленькою.
-      // Формула: 1 / (відстань у днях). Якщо вчора (1 день) = вага 1. Якщо 5 днів тому = вага 0.2.
       const daysAgo = (futureX - pastX) / 24;
       const weight = 1 / daysAgo;
 
@@ -35,7 +24,6 @@ const predictParam = (dataPoints, futureX, min = -100, max = 10000) => {
     }
   }
 
-  // 3. Збираємо фінальний прогноз
   const avgDeviation = totalWeight > 0 ? weightedSumDeviation / totalWeight : 0;
   let predicted = trendValue + avgDeviation;
 
@@ -103,7 +91,6 @@ export const generateLocalForecast = async (apiData, lat, lon) => {
     const futureX = currentIndex - historyStart + i;
     const futureTime = new Date(now.getTime() + i * 3600000).toISOString();
 
-    // СУВОРО ОКРУГЛЮЄМО ДАНІ
     const t = Math.round(predictParam(trainData.temp, futureX));
     const p = Math.round(predictParam(trainData.pressure, futureX, 900, 1100));
     const h = Math.round(predictParam(trainData.humidity, futureX, 0, 100));

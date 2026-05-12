@@ -48,14 +48,11 @@ const WindOverlay = ({ width, height, projection, clipPathString }) => {
     const ctx = canvas.getContext("2d");
     let animationFrameId;
 
-    // СУПЕР-ОПТИМІЗАЦІЯ ДЛЯ iOS:
-    // Замість постійного Path2D clipping на кожному кадрі, ми один раз
-    // малюємо маску в пам'яті (Offscreen Canvas). Це прибирає лаги!
     const maskCanvas = document.createElement("canvas");
     maskCanvas.width = width;
     maskCanvas.height = height;
     const maskCtx = maskCanvas.getContext("2d");
-    maskCtx.fillStyle = "white"; // Білим кольором заливаємо те, що має бути видимим
+    maskCtx.fillStyle = "white";
     if (clipPathString) {
       maskCtx.fill(new Path2D(clipPathString));
     }
@@ -121,7 +118,6 @@ const WindOverlay = ({ width, height, projection, clipPathString }) => {
 
       ctx.stroke();
 
-      // ШВИДКЕ ВІДРІЗАННЯ КОРДОНІВ (Без лагів на iPhone)
       if (clipPathString) {
         ctx.globalCompositeOperation = "destination-in";
         ctx.drawImage(maskCanvas, 0, 0);

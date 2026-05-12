@@ -67,14 +67,11 @@ export const getNext24Hours = (hourlyData, dailyData) => {
       let dailyIdx = dailyData.time.findIndex((t) =>
         t.startsWith(localDateStr),
       );
-      if (dailyIdx === -1) dailyIdx = 0; // fallback для AI режиму
+      if (dailyIdx === -1) dailyIdx = 0;
 
       const srDate = new Date(dailyData.sunrise[dailyIdx]);
       const ssDate = new Date(dailyData.sunset[dailyIdx]);
 
-      // КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ:
-      // Принудительно задаем закату и рассвету ту же дату (год, месяц, день),
-      // что и у проверяемого часа. Это решает баг AI-модели при переходе через полночь.
       srDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
       ssDate.setFullYear(date.getFullYear(), date.getMonth(), date.getDate());
 

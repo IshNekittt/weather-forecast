@@ -19,7 +19,6 @@ const BriefWidget = () => {
   const [loadedVideoUrl, setLoadedVideoUrl] = useState(null);
   const [failedUrls, setFailedUrls] = useState(new Set());
 
-  // --- ДИНАМІЧНИЙ СТАН ---
   const isExiting =
     activeRegion &&
     (!selectedRegion || selectedRegion.name !== activeRegion.name);
@@ -28,13 +27,11 @@ const BriefWidget = () => {
     setActiveRegion(selectedRegion);
   }
 
-  // Предзавантаження для Redux (selected)
   const { data: targetData, isFetching: isTargetLoading } = useGetWeatherQuery(
     selectedRegion
       ? { lat: selectedRegion.lat, lon: selectedRegion.lon }
       : skipToken,
   );
-  // Дані для того, що бачимо (active)
   const { data: activeData } = useGetWeatherQuery(
     activeRegion ? { lat: activeRegion.lat, lon: activeRegion.lon } : skipToken,
   );
@@ -88,7 +85,6 @@ const BriefWidget = () => {
 
   if (!activeRegion) return null;
 
-  // Відображаємо дані АКТИВНОГО регіону (навіть під час анімації виходу)
   const displayData =
     isAiMode && aiCalculations[activeRegion.name]
       ? aiCalculations[activeRegion.name].data
@@ -145,7 +141,6 @@ const BriefWidget = () => {
           <X size={18} />
         </button>
 
-        {/* ПРАВКА: прибрано !isExiting, щоб контент не зникав під час анімації */}
         {current && (
           <>
             <div className={styles.header}>{activeRegion.name}</div>

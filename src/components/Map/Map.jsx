@@ -35,7 +35,6 @@ const Map = () => {
 
   const pathGenerator = geoPath().projection(projection);
 
-  // Створюємо рядок SVG-шляху кордонів України для маски безпосередньо у Canvas
   const clipPathString = useMemo(() => {
     if (!projection || geographies.length === 0) return "";
     return geographies.map((geo) => pathGenerator(geo)).join(" ");
@@ -57,7 +56,6 @@ const Map = () => {
 
   return (
     <div className={styles.mapWrapper} onClick={() => dispatch(clearRegion())}>
-      {/* КАНВАС З ВІТРОМ (абсолютно позиційований, лежить під картою) */}
       {geographies.length > 0 && (
         <div className={styles.windCanvasContainer}>
           <WindOverlay
@@ -69,7 +67,6 @@ const Map = () => {
         </div>
       )}
 
-      {/* SVG КАРТА */}
       <svg
         viewBox={`0 0 ${VIEWBOX_WIDTH} ${VIEWBOX_HEIGHT}`}
         className={styles.svgContainer}
@@ -92,7 +89,6 @@ const Map = () => {
         </g>
       </svg>
 
-      {/* Обертка для віджета */}
       <Suspense fallback={null}>
         <div
           style={{

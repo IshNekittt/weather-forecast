@@ -17,7 +17,6 @@ function App() {
       className={styles.appContainer}
       onClick={() => dispatch(clearRegion())}
     >
-      {/* МАКСИМАЛЬНО ОПТИМИЗИРОВАННЫЙ ФОН: Полупрозрачные летающие облака */}
       <div
         className={clsx(
           styles.animatedBackground,

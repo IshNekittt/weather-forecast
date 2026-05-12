@@ -60,7 +60,6 @@
   gap: 15px;
 }
 
-/* ЗАГОЛОВОК */
 .header {
   text-align: center;
   margin-bottom: 20px;
@@ -68,8 +67,6 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-
-  /* КРИТИЧНИЙ ФІКС ДЛЯ iOS (WEBKIT) */
   position: relative;
   z-index: 10;
   transform: translateZ(0);
@@ -128,7 +125,6 @@
   padding-bottom: 8px;
 }
 
-/* ПО ЧАСАМ (ГОРИЗОНТАЛЬНЫЙ СКРОЛЛ) */
 .hourlyScroll {
   display: flex;
   gap: 21.5px;
@@ -187,7 +183,6 @@
   opacity: 0.6;
 }
 
-/* ФИКС СЕТКИ ВИДЖЕТОВ */
 .widgetsGrid {
   display: grid;
   gap: 15px;
@@ -228,7 +223,6 @@
   opacity: 0.8;
 }
 
-/* ШКАЛА УФ-ІНДЕКСУ */
 .uvScaleContainer {
   position: relative;
   width: 100%;
@@ -257,7 +251,6 @@
   box-shadow: 0 0 5px rgba(0, 0, 0, 0.8);
 }
 
-/* КОМПАС ВІТРУ */
 .compassContainer {
   position: relative;
   width: 84px;
@@ -507,7 +500,6 @@
   opacity: 0.85;
 }
 
-/* АДАПТАЦІЯ ДЛЯ ТЕЛЕФОНІВ */
 @media (max-width: 767px) {
   .content {
     max-width: 460px;
@@ -515,14 +507,14 @@
   }
   .regionName {
     font-size: 1.8rem;
-    text-shadow: none; /* Забороняємо тіні на iOS для стабільності */
+    text-shadow: none;
   }
   .currentTemp {
     font-size: 4.2rem;
   }
   .condition,
   .highLow {
-    text-shadow: none; /* Забороняємо тіні на iOS для стабільності */
+    text-shadow: none;
   }
   .dailyPanel {
     min-height: 530px;

@@ -177,7 +177,6 @@ const FullModal = () => {
       : apiData;
   const { current, daily, hourly } = displayData;
 
-  // ИСПРАВЛЕНИЕ ПОЛУНОЧИ: собираем локальную дату, а не UTC, чтобы избежать ошибки часовых поясов
   const todayDate = new Date();
   const tYear = todayDate.getFullYear();
   const tMonth = String(todayDate.getMonth() + 1).padStart(2, "0");
@@ -307,7 +306,6 @@ const FullModal = () => {
                       justifyContent: "center",
                     }}
                   >
-                    {/* ИСПРАВЛЕНИЕ: проброшен аргумент h.isDay */}
                     {getWeatherProps(h.code, h.isDay).icon}
                   </div>
                   <div style={{ width: "30px", textAlign: "left" }}>
@@ -599,7 +597,6 @@ const FullModal = () => {
               <div key={i} className={styles.hourBlock}>
                 <span className={styles.hourTime}>{hour.time}</span>
                 <div className={styles.hourIconWrapper}>
-                  {/* ИСПРАВЛЕНИЕ: проброшен аргумент hour.isDay */}
                   {getWeatherProps(hour.code, hour.isDay).icon}
                   {hour.precipProb > 0 && (
                     <span className={styles.precipProbText}>
