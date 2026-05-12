@@ -1,58 +1,101 @@
-# Ishnekittt Weather Forecast
+# Weather Forecast
 
-An interactive weather forecasting web application built with React 19 and Vite. The project stands out with its custom meteorological map rendering engine featuring live wind particles, dynamic video backgrounds, and a **client-side AI mathematical model** that calculates local weather forecasts entirely in the browser.
+This project is a client-side web application for meteorological data analysis. The primary architectural goal was to shift heavy computational loads—such as vector field animation and mathematical weather forecasting—directly to the client browser. It is built with React 19 and bundled via Vite.
 
-## 🚀 Key Features
+## System Architecture and Data Flow
 
-- **Interactive SVG/Canvas Map:** Renders geographical regions using D3.js overlaid with a real-time particle simulation of wind flows.
-- **Dynamic Video Environment:** The application's background seamlessly transitions between videos corresponding to the selected region's live weather conditions.
-- **Deep Analytics:** Custom SVG components visualize UV Index, atmospheric pressure (gauge), relative humidity, and sun phases.
-- **Local AI Forecast:** An alternative mathematical forecasting mode running completely client-side without third-party servers, powered by linear regression.
-- **Extreme Optimization:** Leverages GPU-accelerated CSS animations for background clouds and Offscreen Canvas rendering for complex particle masking.
+Component interaction revolves around Redux Toolkit global state and the RTK Query caching layer. We avoided using local component states for weather data to prevent duplicate network requests when switching between widgets and modals.
 
-## 🧩 Architecture & Component Interaction
+```mermaid
+graph TD
+    subgraph UI Layer
+        Map[Map Component SVG/D3]
+        Widget[BriefWidget]
+        Modal[FullModal]
+    end
 
-The application follows a strict component-based architecture with centralized state management handled by **Redux Toolkit** and **RTK Query**.
+    subgraph State Management
+        Store[Redux Store]
+        Persist[SessionStorage Cache]
+        API[RTK Query: weatherApi]
+    end
 
-### Data Flow Diagram:
+    subgraph Data Processing
+        AI[Local Model: aiForecastUtils]
+    end
 
-1. **Initialization (`App.jsx`):** Renders the animated geometric cloud background and mounts the `Map` component.
-2. **Map Interaction:** Clicking an SVG polygon triggers `d3-geo` to calculate the region's centroid. The Redux Dispatcher updates the `selectedRegion` payload in `appSlice`.
-3. **Data Layer Reactivity:** RTK Query (`weatherApi`) reacts to coordinate changes and fetches the comprehensive data payload (current, hourly, 10-day, and 5-day historical) from the Open-Meteo API.
-4. **Widget Render:** The `BriefWidget` animates in, displaying immediate weather parameters while prefetching the associated background video.
-5. **Deep Dive (`FullModal`):** Opening the detailed modal exposes temporal metrics, 10-day lists, interactive gauges, and the "AI Mode" toggle.
+    User((User)) -->|Clicks region| Map
+    Map -->|Dispatch lat/lon| Store
+    Store -->|Subscribe to coordinates| API
+    API <-->|Read/Write Cache| Persist
+    API -->|HTTP GET| OpenMeteo[(Open-Meteo API)]
 
-### State Management
+    OpenMeteo -->|Actual data + 120h history| API
+    API --> Widget
+    API --> Modal
 
-- **`appSlice`**: Manages UI state (`selectedRegion`, `isFullModalOpen`) and caches the heavy calculations from the AI model (`aiCalculations`).
-- **`redux-persist`**: Bound to `sessionStorage` to persist the RTK Query cache across page reloads, dramatically minimizing network overhead.
+    Modal -->|Toggle AI Mode| Store
+    API -->|Pass 120h array| AI
+    AI -->|Calculate 24h forecast| Store
+    Store -->|Substitute data source| Modal
+```
 
-## 🧠 The AI Forecasting Model
+## Rendering Subsystem (D3.js + Canvas)
 
-One of the most complex implementations in this project is `utils/aiForecastUtils.js`, which serves as a backend-less forecasting algorithm.
+The map rendering is split into two layers: a static SVG for handling polygon click events and a Canvas for drawing the wind particle flow.
 
-**How it works:**
-The algorithm extracts an array of actual weather data covering the last **120 hours** (5 days) and generates a prediction for the next **24 hours** using two core mathematical principles:
+Our biggest performance bottleneck during development was mobile devices (specifically Safari on iOS). Calling the `clip()` method to constrain 450 moving particles strictly within the country borders on every frame (60 FPS) overloaded the main thread.
 
-1. **Global Trend (Linear Regression):**
-   Using the `regression` library, it analyzes the 120 data points for every metric (temperature, pressure, etc.) to establish a baseline trend using the Ordinary Least Squares (OLS) method.
+**The Offscreen Canvas Solution:**
+We moved the mask generation to a separate canvas that exists only in memory.
 
-2. **Exponential Smoothing of Diurnal Seasonality:**
-   Weather is cyclical (warm during the day, cold at night), which linear regression fails to capture natively. The algorithm calculates the deviation between the trendline and the actual historical data at the **exact same hour** in previous days (24, 48, 72 hours ago).
-   An exponential weight function is applied: `weight = 1 / daysAgo`. A deviation observed yesterday (weight = 1) affects the final forecast much more than a deviation observed 5 days ago (weight = 0.2). Final Prediction = Trend + Weighted Average Deviation.
+```mermaid
+sequenceDiagram
+    participant Main as Main Canvas (Screen)
+    participant Offscreen as Offscreen Canvas (Memory)
+    participant DOM as Browser
 
-3. **Heuristic Derivative Calculation:**
-   Metrics like precipitation probability and WMO weather codes are determined via derivative heuristics (e.g., pressure drops combined with humidity spikes).
+    Note over Offscreen: Executes once on load
+    Offscreen->>Offscreen: Draw white mask (clipPathString)
 
-## ⚡ Optimization Techniques
+    loop Every frame (requestAnimationFrame)
+        Main->>Main: Calculate vectors for 450 particles (X, Y, U, V)
+        Main->>Main: Draw particle trajectories
+        Main->>Offscreen: Apply via globalCompositeOperation = "destination-in"
+        Offscreen-->>Main: Clip particles outside borders
+        Main->>DOM: Render frame
+    end
+```
 
-- **Offscreen Canvas Masking (`WindOverlay.jsx`):** To restrict wind particles within the country borders, a complex SVG path (`clipPath`) is utilized. Instead of invoking the highly expensive `clip()` method on the main thread during every animation frame, the mask is drawn **once** to a virtual `maskCanvas` and applied using `globalCompositeOperation = "destination-in"`. This eradicates severe frame drops, particularly on iOS devices.
-- **Hardware Acceleration (`App.module.css`):** The background clouds are animated strictly via `transform: translate3d`. Their shapes are built via pseudo-elements without `box-shadow` or `filter: blur`, ensuring the GPU can composite layers independently (enforced via `will-change: transform`).
-- **Lazy Loading:** Modals and dynamic widgets are loaded asynchronously via `React.lazy` and `Suspense`.
+Additionally, the animated cloud background (`App.module.css`) relies solely on `transform: translate3d` and `will-change`. We intentionally removed `box-shadow` and `filter: blur`, replacing them with geometric `::before` and `::after` pseudo-elements. This forces the browser to delegate layer rendering to the GPU.
 
-## 🛠 Tech Stack
+## Forecasting Mathematical Model (AI Mode)
 
-- **Core:** React 19, Vite (React Compiler enabled)
-- **State Management:** Redux Toolkit, RTK Query, Redux Persist
-- **Math & Geospatial:** d3-geo, regression, suncalc
-- **Styling:** CSS Modules, clsx
+The algorithm in `utils/aiForecastUtils.js` generates forecasts without requesting data from a backend. It is not a neural network, but a mathematical model utilizing linear regression and exponential smoothing.
+
+```mermaid
+flowchart LR
+    Data[(API Archive: last 120h)] --> Trend[Linear Regression]
+    Data --> Season[Diurnal Seasonality]
+
+    Trend --> |Base Trend| Merge(Forecast Aggregation)
+    Season --> |Calculate Deviations| Smooth[Exponential Smoothing]
+    Smooth --> |weight = 1/daysAgo| Merge
+
+    Merge --> |Temperature, Pressure, Humidity| Heuristics[Heuristics Engine]
+
+    Heuristics --> |Pressure drops| Rules{Calculate Derivatives}
+    Heuristics --> |Humidity spikes| Rules
+
+    Rules --> |Precipitation Probability %| Output[24h Local Forecast]
+    Rules --> |WMO Weather Code| Output
+```
+
+**How the algorithm works:**
+
+1. **Global Trend:** `regression.js` calculates a straight trend line using the Ordinary Least Squares method for each parameter.
+2. **Seasonality:** Linear regression ignores daily cycles (nights are colder than days). To compensate, the script calculates the difference between the trend line and the actual data at the _exact same hour coordinate_ on previous days.
+3. **Weights:** We apply the formula `weight = 1 / daysAgo`. A deviation from the trend recorded yesterday (weight 1) contributes more heavily to the forecast than data from five days ago (weight 0.2).
+4. **Derivatives:** Derived parameters like precipitation probability are calculated via physics-based `if/else` logic (e.g., high humidity + rapid pressure drop = rain).
+
+The model has limitations and can miscalculate during sudden atmospheric front shifts, but it handles inertial weather changes reliably.
