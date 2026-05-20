@@ -542,7 +542,7 @@ const FullModal = () => {
           right: "70px",
           background: isAiMode
             ? "rgba(170, 59, 255, 0.5)"
-            : "rgba(255, 255, 255, 0.2)",
+            : "rgba(168, 89, 247, 0.75)",
         }}
         onClick={handleAiToggle}
       >
