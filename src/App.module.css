@@ -48,7 +48,8 @@
   height: 50px;
   opacity: 0.15;
   top: 15%;
-  animation: floatA 40s linear infinite;
+  animation: floatA 90s linear infinite;
+  animation-delay: -20s;
 }
 
 .cloud2 {
@@ -57,8 +58,8 @@
   height: 40px;
   opacity: 0.12;
   top: 35%;
-  animation: floatB 32s linear infinite;
-  animation-delay: -10s;
+  animation: floatB 110s linear infinite;
+  animation-delay: -80s;
 }
 
 .cloud3 {
@@ -67,8 +68,8 @@
   height: 60px;
   opacity: 0.06;
   top: 60%;
-  animation: floatA 45s linear infinite reverse;
-  animation-delay: -25s;
+  animation: floatA 140s linear infinite reverse;
+  animation-delay: -40s;
 }
 
 .cloud4 {
@@ -77,8 +78,8 @@
   height: 45px;
   opacity: 0.18;
   top: 80%;
-  animation: floatB 38s linear infinite;
-  animation-delay: -5s;
+  animation: floatB 80s linear infinite;
+  animation-delay: -60s;
 }
 
 .cloud5 {
@@ -87,8 +88,8 @@
   height: 70px;
   opacity: 0.25;
   top: 25%;
-  animation: floatA 50s linear infinite reverse;
-  animation-delay: -15s;
+  animation: floatA 70s linear infinite reverse;
+  animation-delay: -10s;
 }
 
 .cloud6 {
@@ -97,40 +98,42 @@
   height: 35px;
   opacity: 0.15;
   top: 50%;
-  animation: floatB 28s linear infinite;
-  animation-delay: -20s;
+  animation: floatB 100s linear infinite;
+  animation-delay: -50s;
 }
 
 @keyframes floatA {
   0% {
-    transform: translate3d(-300px, 0, 0);
+    transform: translate3d(-400px, 0, 0);
   }
   25% {
-    transform: translate3d(25vw, -20px, 0);
+    /* Ровно 25% от общего пути (100vw + 800px) */
+    transform: translate3d(calc(25vw - 200px), -20px, 0);
   }
   50% {
     transform: translate3d(50vw, 15px, 0);
   }
   75% {
-    transform: translate3d(75vw, -10px, 0);
+    transform: translate3d(calc(75vw + 200px), -10px, 0);
   }
   100% {
-    transform: translate3d(calc(100vw + 300px), 0, 0);
+    transform: translate3d(calc(100vw + 400px), 0, 0);
   }
 }
 
 @keyframes floatB {
   0% {
-    transform: translate3d(-300px, 0, 0);
+    transform: translate3d(-400px, 0, 0);
   }
-  33% {
-    transform: translate3d(33vw, 25px, 0);
+  33.33% {
+    /* Идеальная треть пути */
+    transform: translate3d(calc(33.33vw - 133.33px), 25px, 0);
   }
-  66% {
-    transform: translate3d(66vw, -20px, 0);
+  66.66% {
+    transform: translate3d(calc(66.66vw + 133.33px), -20px, 0);
   }
   100% {
-    transform: translate3d(calc(100vw + 300px), 0, 0);
+    transform: translate3d(calc(100vw + 400px), 0, 0);
   }
 }
 
